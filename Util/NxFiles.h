@@ -27,11 +27,12 @@ namespace ms
 	namespace NxFiles
 	{
 		// Number of needed files.
-		constexpr uint8_t NUM_FILES = 15;
+		constexpr uint8_t NUM_FILES = 17;
 
 		// Names of the needed game files.
 		constexpr std::array<const char*, NUM_FILES> filenames =
 		{
+			"Base.nx",
 			"Character.nx",
 			"Effect.nx",
 			"Etc.nx",
@@ -39,6 +40,7 @@ namespace ms
 			"Map.nx",
 			"Map001.nx",
 			"Mob.nx",
+			"Morph.nx",
 			"Npc.nx",
 			"Quest.nx",
 			"Reactor.nx",

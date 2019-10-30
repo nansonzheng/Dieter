@@ -1,5 +1,5 @@
-# HeavenClient
-HeavenClient is a custom, made-from-scratch game client.
+# Dieter
+Dieter is a fork of HeavenClient, a custom, made-from-scratch game client. Dieter is to be used as the client for [DietStory](https://github.com/BenjixD/MapleSolaxiaV2).
 
 # Supported versions
 The client is currently compatible with version 83 servers.
@@ -7,32 +7,27 @@ The client has only been tested with [HeavenMS](https://github.com/ronancpl/Heav
 For the UI file, a v154+ version should be used.
 
 # Configuration
-The build can be configured by editing the **Journey.h** file. The following options are available:
+~~The build can be configured by editing the **Journey.h** file. The following options are available:
 - **JOURNEY_USE_CRYPTO**: Use cryptography when communicating for the server.
 - **JOURNEY_USE_XXHASH** : Use xxhash for file check (additional dependency)
 - **JOURNEY_USE_ASIO**: Use Asio for networking (additional dependency)
 
-The default settings can be configured by editing the **Configuration.h** file. These are also generated after a game session in a file called **Settings**. These can be altered in the same way as **Configuration.h**, although, these do not persist if you delete the file, unlike **Configuration.h**.
+The default settings can be configured by editing the **Configuration.h** file. These are also generated after a game session in a file called **Settings**. These can be altered in the same way as **Configuration.h**, although, these do not persist if you delete the file, unlike **Configuration.h**.~~
+
+**Journey.h** does not exist in the current repository. More investigation is needed. For the time being, settings such as server connection can be configured in **Configuration.h**.
 
 # Building
 1. Open **MapleStory.sln** in Visual Studio 2017 CE
 2. Make sure to use **Windows SDK Version: 8.1** and **Platform Toolset: v140** (If you don't have these, download them)
    * [Windows 8.1 SDK](https://developer.microsoft.com/en-us/windows/downloads/sdk-archive)
 3. Press **Build** > **Build Solution** or **Ctrl + Shift + B**
+4. Acquire the needed **.nx** files by converting **.wz** files and put them in the root folder
+	- Use [NoLifeStory.zip](https://drive.google.com/open?id=1Mk3Kq1lY4NTMqylN5sn0-DQNAcoZZRYH) to convert the **.wz** files to **.nx** files. 
+		- Extract the zip to anywhere
+		- Put the **.wz** files in the **files** folder and run start.bat
+		- The **.nx** files will be in the same directory as the **.wz** files
+	- For a list of files required, navigate to **NxFiles.h**
 4. After a successful build, you can now run the program by pressing **Debug** > **Start Debugging** or **F5**
-5. Make sure all nx files are present in the parent folder.
-   - For a list of files required navigate to **NxFiles.h**
-6. To convert wz files to nx you can use the [NoLifeStory.zip](https://drive.google.com/open?id=1Mk3Kq1lY4NTMqylN5sn0-DQNAcoZZRYH)
-   - Extract the zip
-   - Place your wz files in the **files** folder
-   - Run **start.bat**
-7. Next you have to fix a difference in the client or your server
-   - Navigate to **LoginParser.cpp: 109**
-   - Change:
-`statsentry.stats[Maplestat::LEVEL] = recv.read_short();`
-   - To:
-`statsentry.stats[Maplestat::LEVEL] = recv.read_byte();`
-   - Or change your server to send the level as a short instead of a byte
 
 # Dependencies
 - Nx library:

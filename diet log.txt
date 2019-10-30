@@ -1,0 +1,47 @@
+HeavenClient Investigation Log:
+
+2019-10-30 02:48 - Started log. Recount of past events:
+	- Attempted build. Encountered Error TRK0005: cannot locate CL.exe
+	- Error TRK0005 resolved: uninstalled Visual Studio 14.0 (2015) and ran vcvars64.bat
+	- Attempted build. Success
+	- Launched in debug mode. Missing .nx files
+	
+02:56 - Started .wz -> .nx file conversions. Copied .wz files to NoLifeStory folder. Missing Map001.wz. UI.wz required to be of version 154+.
+
+03:00 - Found official v154 installer.
+
+03:25 - Uninstalled v83. Installed v154. v154 does not have Map001.wz either. Temporarily ignoring Map001.wz. Made back-up of v83's UI.wz. Copied v154's UI.wz into the folder. Converting files.
+	- Map001.wz is found on the Steam version of MapleStory, but I have to reinstall it to get the file, and my computer is running out of disk space.
+	
+03:37 - Map001.wz is required, as specified in the .cpp files.
+
+05:34 - Installed latest MapleStory on Steam. Retrieved Map001.wz and converted. Encountered error: nlnx could not locate nx files.
+	- Reason: Base.nx or Data.nx was not provided
+	
+05:39 - Converted Base.nx and Morph.nx. Debug successfully starts client. Require account to proceed.
+
+11:54 - Created account. Failed to login: message was "Password is incorrect". Attempted to rebuild without cryptography, but failed due to errors in cryptography.cpp.
+
+12:15 - Cannot log in with credentials "nanson" and "password", with message "This is not a registered ID".
+	- Message "Password is invalid" is due to password length being less than 8?
+	- Not querying DB correctly
+	
+12:47 - Log in issue resolved: added column "fly" to table accounts. Entered a channel. Created a character. Error occurred while finalizing character creation: screenshot on discord.
+
+12:51 - Second account's character creation also failed at the same point. Both accounts unable to log into a channel afterwards.
+
+12:55 - Deleting character resolved channel log in issue.
+
+13:25 - Speculating post character creation crash issue to be charlooks not populated after character creation. Channel log in issue is likely a separate problem.
+
+13:49 - method add_character should push character data into charlooks, testing if it was called
+
+14:08 - Client may be expecting packet containing character info after creation
+
+15:15 - Found problem in packet reading: parse_look had recv ahead by 1 byte. Attempting fix by reducing skips in parse_stats (last method called) by 1
+
+15:20 - Problem appears to be solved, continuing searching the root cause
+
+15:42 - Found that level is being read as a short rather than a byte.
+
+15:48 - Marking character creation issue as solved.
