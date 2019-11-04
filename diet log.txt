@@ -45,3 +45,59 @@ HeavenClient Investigation Log:
 15:42 - Found that level is being read as a short rather than a byte.
 
 15:48 - Marking character creation issue as solved.
+
+20:33 - Started investigating UI issue.
+
+20:45 - Replaced UI.nx with the latest copy from the official servers. UI is visible again. Death issue persists. Party creation persists. 
+	- New issue: chat commands do not work. 
+	- New issue: rope/ladder cannot be grabbed mid-air unless character changes direction first ("counter-strafe")
+	- New issue: cannot drag settings, key bindings windows
+	- New issue: when dragging a window, dragging it on top of another window drops the drag. If moving fast enough, it may be able to maintain drag on the same window, but the cursor position relative to the window clearly has moved.
+	- Considering re-building .nx files using only v154 .wz files, except Map001.wz which is absent
+	
+20:58 - Client reports actions not handled:
+	- 12: Whisper
+	- 13: All Chat
+	- 14: Party Chat
+	- 18: Guild
+	- 19: Friend Chat
+	- 21: Notifier
+	- 24: Cash Shop
+	- 25: Guild Chat
+	- 28: Medals
+	- 30: Alliance Chat
+	- 31: Maple News
+	- 32: Manage Legion
+	- 33: Profession
+	- 35: Item pot
+	- 37: Silent Crusade
+	- 38: Battle Analysis
+	- 39: Guide
+	- 41: Enhance Equip
+	- 42: Monster collection
+	- 43: Soul weapon
+	- 44: Char info
+	- 48: Picture Mode
+	- 49: Maple Achievements
+	- 55: interact / harvest
+	- 58: Mute
+	- 59: Monster book
+	- 60: To spouse
+	
+	- Unhandled packet Opcode 214. Occurred while picking up an NXCash card. Later NXCash Card pickups did not trigger this warning.
+	
+	- New issue: Change channel shows wrong world and channel.
+	- New issue: Opening Maple Chat locks up movement if a second window pops up (hard to reproduce)
+	- New issue: Cannot drag skill
+	- New issue: Minimap displays nothing
+	- New issue: Skill Macros have no skill icons
+	
+2019-10-31 23:48 - Attempted start-up, game failed to move to game state after character selection, but changed resolution/window size.
+
+2019-11-01 21:35 - Game entry failure is caused by stack underflow while trying to read area info
+
+2019-11-04 04:52 - Second character entered Amherst, relogged without problem. Judging cause to be character data. Will need to jump into server codebase to check packet format and why area info is required and/or put in.
+
+17:07 - Monster book data appears not to have been read. (Addendum: Read correctly)
+
+18:13 - Issue resolved. Cause of game entry failure is an unread short meant to be read in parse_minigame. This caused the read head to be 2 bytes behind the supposed address.

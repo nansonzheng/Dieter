@@ -2,19 +2,19 @@
 Dieter is a fork of HeavenClient, a custom, made-from-scratch game client. Dieter is to be used as the client for [DietStory](https://github.com/BenjixD/MapleSolaxiaV2).
 
 # Supported versions
-The client is currently compatible with version 83 servers.
+The client is currently compatible with **version 83** servers.
 The client has only been tested with [HeavenMS](https://github.com/ronancpl/HeavenMS).
-For the UI file, a v154+ version should be used.
+For the **UI.wz** and **Map001.wz**, the latest version (**v208.3** as of writing this README) should be used. Older versions, starting from at least v154, may cause the client to not function properly.
 
 # Configuration
-~~The build can be configured by editing the **Journey.h** file. The following options are available:
+<del>The build can be configured by editing the **Journey.h** file. The following options are available:
 - **JOURNEY_USE_CRYPTO**: Use cryptography when communicating for the server.
 - **JOURNEY_USE_XXHASH** : Use xxhash for file check (additional dependency)
 - **JOURNEY_USE_ASIO**: Use Asio for networking (additional dependency)
 
-The default settings can be configured by editing the **Configuration.h** file. These are also generated after a game session in a file called **Settings**. These can be altered in the same way as **Configuration.h**, although, these do not persist if you delete the file, unlike **Configuration.h**.~~
+The default settings can be configured by editing the **Configuration.h** file. These are also generated after a game session in a file called **Settings**. These can be altered in the same way as **Configuration.h**, although, these do not persist if you delete the file, unlike **Configuration.h**.</del>
 
-**Journey.h** does not exist in the current repository. More investigation is needed. For the time being, settings such as server connection can be configured in **Configuration.h**.
+**Journey.h** does not exist in the current repository. For the time being, settings such as server connection can be configured in **Configuration.h**, and security settings listed about can be found in **MapleStory.h**.
 
 # Building
 1. Open **MapleStory.sln** in Visual Studio 2017 CE

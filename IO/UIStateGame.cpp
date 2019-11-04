@@ -252,21 +252,7 @@ namespace ms
 						Stage::get().get_player().get_quests()
 						);
 					break;
-				case KeyAction::Id::MENU:
-					if (auto statusbar = UI::get().get_element<UIStatusbar>())
-						statusbar->toggle_menu();
-
-					break;
-				case KeyAction::Id::QUICKSLOTS:
-					if (auto statusbar = UI::get().get_element<UIStatusbar>())
-						statusbar->toggle_qs();
-
-					break;
-				case KeyAction::Id::TOGGLECHAT:
-					if (auto chatbar = UI::get().get_element<UIChatbar>())
-						chatbar->toggle_chat();
-
-					break;
+				
 				case KeyAction::Id::KEYBINDINGS:
 				{
 					auto keyconfig = UI::get().get_element<UIKeyConfig>();
@@ -278,9 +264,19 @@ namespace ms
 
 					break;
 				}
-				case KeyAction::Id::MAINMENU:
+				case KeyAction::Id::TOGGLECHAT:
+					if (auto chatbar = UI::get().get_element<UIChatbar>())
+						chatbar->toggle_chat();
+
+					break;
+				case KeyAction::Id::MENU:
 					if (auto statusbar = UI::get().get_element<UIStatusbar>())
-						statusbar->send_key(action, pressed, escape);
+						statusbar->toggle_menu();
+
+					break;
+				case KeyAction::Id::QUICKSLOTS:
+					if (auto statusbar = UI::get().get_element<UIStatusbar>())
+						statusbar->toggle_qs();
 
 					break;
 				case KeyAction::Id::EVENT:
@@ -288,6 +284,13 @@ namespace ms
 					break;
 				case KeyAction::Id::CHANGECHANNEL:
 					emplace<UIChannel>();
+					break;
+				case KeyAction::Id::CHARINFO:
+
+				case KeyAction::Id::MAINMENU:
+					if (auto statusbar = UI::get().get_element<UIStatusbar>())
+						statusbar->send_key(action, pressed, escape);
+
 					break;
 				default:
 					std::cout << "Action (" << action << ") not handled!" << std::endl;

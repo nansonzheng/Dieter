@@ -99,7 +99,7 @@ namespace ms
 		recv.read_byte(); // 'buddycap'
 
 		if (recv.read_bool())
-			recv.read_string(); // 'linkedname'
+			recv.read_string(); // 'linkedname' for use by blessings, etc.
 
 		parse_inventory(recv, player.get_inventory());
 		parse_skillbook(recv, player.get_skills());
@@ -279,7 +279,7 @@ namespace ms
 
 	void SetfieldHandler::parse_minigame(InPacket& recv) const
 	{
-		//int16_t mgsize = recv.read_short();
+		int16_t mgsize = recv.read_short();
 
 		//for (int16_t i = 0; i < mgsize; i++) {}
 	}
