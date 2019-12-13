@@ -12,7 +12,7 @@ For the **UI.wz** and **Map001.wz**, the latest version (**v208.3** as of writin
 - **JOURNEY_USE_XXHASH** : Use xxhash for file check (additional dependency)
 - **JOURNEY_USE_ASIO**: Use Asio for networking (additional dependency)
 
-The default settings can be configured by editing the **Configuration.h** file. These are also generated after a game session in a file called **Settings**. These can be altered in the same way as **Configuration.h**, although, these do not persist if you delete the file, unlike **Configuration.h**.</del>
+<del>The default settings can be configured by editing the **Configuration.h** file. These are also generated after a game session in a file called **Settings**. These can be altered in the same way as **Configuration.h**, although, these do not persist if you delete the file, unlike **Configuration.h**.</del>
 
 **Journey.h** does not exist in the current repository. For the time being, settings such as server connection can be configured in **Configuration.h**, and security settings listed about can be found in **MapleStory.h**.
 

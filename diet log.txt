@@ -101,3 +101,70 @@ HeavenClient Investigation Log:
 17:07 - Monster book data appears not to have been read. (Addendum: Read correctly)
 
 18:13 - Issue resolved. Cause of game entry failure is an unread short meant to be read in parse_minigame. This caused the read head to be 2 bytes behind the supposed address.
+
+2019-11-07 17:18 - Jotting down map codes for future reference: 
+	- 10000: Maple Town (Starting map for Explorers)
+	- 1000000: Amherst
+	- 100000000: Henesys
+	- 101000000: Ellinia
+	- 102000000: Perion
+	- 103000000: Kerning City
+	- 104000000: Lith Harbor
+	- 105040300: Sleepywood
+	- 130000000: Ereve
+	- 140000000: Rien
+	
+	- 0 - 999999: Maple Island maps
+	- 100000000 - 199999999: Victoria Island, Ereve, Rien
+	
+[Addendum 2019-12-05]
+	Maple < 1000000 
+	100mil <= victoria < 200mil
+	200mil <= ossyria < 300mil
+	300mil <= elin < 400mil
+	540mil <= singapore < 560mil
+	600mil <= MasteriaGL < 620mil
+	670000100 <= weddingGL <= 670011000
+	677mil <= Episode1GL <= 677000012
+	680mil <= weddingGL <= 680010100
+	681mil = weddingGL
+	682mil <= HalloweenGL <=682010203
+	683mil <= event <= 683000129
+	800mil <= jp < 900mil
+
+	etc:
+	[674030000, 674030300]
+	[680100000, 680100003]
+	[889000000 ,999999998]
+	
+21:14 - Made draw call for MiniMap canvas, but is off-centre. MiniMap frame remains static. Issue: "ghost" monsters spawn after exiting a map with monsters.
+
+22:49 - DrawArguments Parameters: (position, centre, stretch, xscale, yscale, colour, angle)
+	- MiniMap window border: 6px? thin
+	- Normal MiniMap top left dimensions: 64x17?
+	- Max MiniMap top left dimensions: 64x67 (inner border begins at 7,58)
+	
+2019-11-08 02:42 - map_sprite exists, but emplace_back still uses nl::node because the draw argument is different, so actually different sprites are created for each window mode.
+
+2019-11-14 04:13 - Using Stage::get() to retrieve data about current map seems to precede changing of the map. I'm unaware if it's a race condition or a matter of precedence, but the former seems more likely. This may also be the cause for "ghost" monsters.
+
+2019-11-16 17:53 - Attempting to add map ID to Stage's instance variables, and having UIMiniMap query that for map change instead. Seems okay so far. UIMiniMap's ID is always set to the last map played (or 0 if coming from fresh start) when logging into a character, then gets reset to the actual map ID, but it doesn't seem to pose a problem yet.
+
+23:47 - FPS count reaches low 30s in Henesys. Suggest testing FPS with master branch to gauge performance hit of MiniMap.
+
+2019-11-18 01:34 - To set up localhost server for LAN: 
+	- In Server repo's config.yaml, change Host IP to internal IP address (Keeping it 127.0.0.1 will cause remote clients to exit when selecting a character), and change USE_IP_VALIDATION to false
+	- In all Client repo's Settings file, change IP to internal IP address of the host.
+	
+03:42 - Things to consider in the future for MiniMap:
+	- Loading all marker sprites on init to reduce hotloading marker sprites during draw_movable_markers call
+	- Consolidating all marker draw calls into one function (currently portals are emplaced statically)
+	
+17:18 - To make window draggable:
+	- Make sure UIDragElement is included
+	- Set dimension to the size of the window
+	- Set dragarea to the size desired - generally (dimension.x(), 20) aka title bar of the window
+
+2019-11-23 14:51 - The NPC window closes automatically when minimap is minimized. It is also parented to the minimap window. NPC names are abbreviated and appended with ".." when too long. If there is a slider present, widen the window to include it. When clicking on an NPC's name, there will be an arrow indicating location of the NPC. Minimap blinks temporarily when changing from big to small, possibly indicating that different objects are used to draw the big and small maps.
+
+2019-12-05 00:30 - An addendum is made to the Nov 7th 17:18 entry to complete the categorization of map IDs. As a comment, I have to say that maps after 500 million (Elin forest) are utter chaos and significant digits on map IDs become almost formalities.
