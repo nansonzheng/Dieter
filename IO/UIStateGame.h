@@ -21,17 +21,11 @@
 
 #include "Components/EquipTooltip.h"
 #include "Components/ItemTooltip.h"
+#include "Components/MapTooltip.h"
 #include "Components/SkillTooltip.h"
 #include "Components/TextTooltip.h"
 
-#include "../Timer.h"
-
-#include "../Template/EnumMap.h"
-#include "../Template/Optional.h"
-#include "../Character/Charstats.h"
-
-#include <list>
-#include <memory>
+#include "../Character/CharStats.h"
 
 namespace ms
 {
@@ -46,7 +40,7 @@ namespace ms
 		void doubleclick(Point<int16_t> pos) override;
 		void rightclick(Point<int16_t> pos) override;
 		void send_key(KeyType::Id type, int32_t action, bool pressed, bool escape) override;
-		Cursor::State send_cursor(Cursor::State mst, Point<int16_t> pos) override;
+		Cursor::State send_cursor(Cursor::State cursorstate, Point<int16_t> cursorpos) override;
 		void send_scroll(double yoffset) override;
 		void send_close() override;
 
@@ -56,40 +50,51 @@ namespace ms
 		void show_item(Tooltip::Parent parent, int32_t itemid) override;
 		void show_skill(Tooltip::Parent parent, int32_t skill_id, int32_t level, int32_t masterlevel, int64_t expiration) override;
 		void show_text(Tooltip::Parent parent, std::string text) override;
+		void show_map(Tooltip::Parent parent, std::string name, std::string description, int32_t mapid, bool bolded) override;
 
 		Iterator pre_add(UIElement::Type type, bool toggled, bool focused);
 		void remove(UIElement::Type type) override;
 		UIElement* get(UIElement::Type type) override;
 		UIElement* get_front(std::list<UIElement::Type> types) override;
 		UIElement* get_front(Point<int16_t> pos) override;
-		int64_t get_uptime() override;
-		uint16_t get_uplevel() override;
-		int64_t get_upexp() override;
 
 	private:
 		const CharStats& stats;
 
 		bool drop_icon(const Icon& icon, Point<int16_t> pos);
+		void remove_icon();
+		void remove_cursors();
+		void remove_cursor(UIElement::Type type);
+
 		template <class T, typename...Args>
 		void emplace(Args&& ...args);
 
 		EnumMap<UIElement::Type, UIElement::UPtr, UIElement::Type::NUM_TYPES> elements;
 		std::list<UIElement::Type> elementorder;
 		UIElement::Type focused;
+		UIElement* dragged;
 
 		EquipTooltip eqtooltip;
 		ItemTooltip ittooltip;
 		SkillTooltip sktooltip;
 		TextTooltip tetooltip;
+		MapTooltip matooltip;
 		Optional<Tooltip> tooltip;
 		Tooltip::Parent tooltipparent;
 
 		Optional<Icon> draggedicon;
 
+		std::map<Icon::IconType, UIElement::Type> icon_map =
+		{
+			{ Icon::IconType::NONE,			UIElement::Type::NONE			},
+			{ Icon::IconType::SKILL,		UIElement::Type::SKILLBOOK		},
+			{ Icon::IconType::EQUIP,		UIElement::Type::EQUIPINVENTORY	},
+			{ Icon::IconType::ITEM,			UIElement::Type::ITEMINVENTORY	},
+			{ Icon::IconType::KEY,			UIElement::Type::KEYCONFIG		},
+			{ Icon::IconType::NUM_TYPES,	UIElement::Type::NUM_TYPES		}
+		};
+
 		int16_t VWIDTH;
 		int16_t VHEIGHT;
-		std::chrono::time_point<std::chrono::steady_clock> start;
-		uint16_t levelBefore;
-		int64_t expBefore;
 	};
 }

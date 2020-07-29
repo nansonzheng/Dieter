@@ -37,6 +37,7 @@ namespace ms
 		settings.emplace<DefaultAccount>();
 		settings.emplace<DefaultWorld>();
 		settings.emplace<DefaultChannel>();
+		settings.emplace<DefaultRegion>();
 		settings.emplace<DefaultCharacter>();
 		settings.emplace<Chatopen>();
 		settings.emplace<PosSTATS>();
@@ -56,13 +57,19 @@ namespace ms
 		settings.emplace<PosEVENT>();
 		settings.emplace<PosKEYCONFIG>();
 		settings.emplace<PosOPTIONMENU>();
+		settings.emplace<PosCHARINFO>();
+		settings.emplace<MiniMapType>();
+		settings.emplace<MiniMapSimpleMode>();
+		settings.emplace<MiniMapDefaultHelpers>();
 
 		load();
 	}
 
 	Configuration::~Configuration()
 	{
+#ifndef DEBUG
 		save();
+#endif
 	}
 
 	void Configuration::load()
@@ -72,7 +79,7 @@ namespace ms
 
 		if (file.is_open())
 		{
-			// Go through the file line for line.
+			// Go through the file line by line
 			std::string line;
 
 			while (getline(file, line))
@@ -90,7 +97,7 @@ namespace ms
 			}
 		}
 
-		// Replace default values with loaded values.
+		// Replace default values with loaded values
 		for (auto& setting : settings)
 		{
 			auto rsiter = rawsettings.find(setting.second->name);
@@ -102,16 +109,16 @@ namespace ms
 
 	void Configuration::save() const
 	{
-		// Open the settings file.
+		// Open the settings file
 		std::ofstream config(FILENAME);
 
 		if (config.is_open())
 		{
-			// Save settings line by line.
+			// Save settings line by line
 			for (auto& setting : settings)
 				config << setting.second->to_string() << std::endl;
-			}
 		}
+	}
 
 	void Configuration::BoolEntry::save(bool b)
 	{
@@ -154,6 +161,46 @@ namespace ms
 		return SHOW_FPS;
 	}
 
+	bool Configuration::get_show_packets() const
+	{
+		return SHOW_PACKETS;
+	}
+
+	bool Configuration::get_auto_login() const
+	{
+		return AUTO_LOGIN;
+	}
+
+	uint8_t Configuration::get_auto_world()
+	{
+		return auto_world;
+	}
+
+	uint8_t Configuration::get_auto_channel()
+	{
+		return auto_channel;
+	}
+
+	std::string Configuration::get_auto_acc()
+	{
+		return auto_acc;
+	}
+
+	std::string Configuration::get_auto_pass()
+	{
+		return auto_pass;
+	}
+
+	std::string Configuration::get_auto_pic()
+	{
+		return auto_pic;
+	}
+
+	int32_t Configuration::get_auto_cid()
+	{
+		return auto_cid;
+	}
+
 	std::string Configuration::get_title() const
 	{
 		return TITLE;
@@ -162,6 +209,21 @@ namespace ms
 	std::string Configuration::get_version() const
 	{
 		return VERSION;
+	}
+
+	std::string Configuration::get_login_music() const
+	{
+		return LoginMusic;
+	}
+
+	std::string Configuration::get_login_music_sea() const
+	{
+		return LoginMusicSEA;
+	}
+
+	std::string Configuration::get_login_music_newtro() const
+	{
+		return LoginMusicNewtro;
 	}
 
 	std::string Configuration::get_joinlink() const
@@ -187,6 +249,11 @@ namespace ms
 	std::string Configuration::get_resetpic() const
 	{
 		return RESETPIC;
+	}
+
+	std::string Configuration::get_chargenx() const
+	{
+		return CHARGENX;
 	}
 
 	void Configuration::set_macs(char* macs)
@@ -299,5 +366,15 @@ namespace ms
 	void Configuration::set_channelid(uint8_t id)
 	{
 		channelid = id;
+	}
+
+	bool Configuration::get_admin()
+	{
+		return admin;
+	}
+
+	void Configuration::set_admin(bool value)
+	{
+		admin = value;
 	}
 }

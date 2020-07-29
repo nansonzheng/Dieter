@@ -17,7 +17,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 #include "PetLook.h"
 
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
@@ -26,13 +28,13 @@ namespace ms
 		itemid = iid;
 		name = nm;
 		uniqueid = uqid;
+
 		set_position(pos.x(), pos.y());
 		set_stance(st);
 
 		namelabel = Text(Text::Font::A13M, Text::Alignment::CENTER, Color::Name::WHITE, Text::Background::NAMETAG, name);
 
 		std::string strid = std::to_string(iid);
-
 		nl::node src = nl::nx::item["Pet"][strid + ".img"];
 
 		animations[Stance::MOVE] = src["move"];

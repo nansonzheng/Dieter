@@ -20,7 +20,8 @@
 #include "../UIElement.h"
 
 #include "../Components/ChatBalloon.h"
-#include "../Net/Login.h"
+
+#include "../../Net/Login.h"
 
 namespace ms
 {
@@ -38,11 +39,15 @@ namespace ms
 		Cursor::State send_cursor(bool clicked, Point<int16_t> cursorpos) override;
 		void send_key(int32_t keycode, bool pressed, bool escape) override;
 
+		UIElement::Type get_type() const override;
+
 		void draw_world();
 		void add_world(World world);
 		void add_recommended_world(RecommendedWorld world);
 		void change_world(World selectedWorld);
 		void remove_selected();
+		void set_region(uint8_t value);
+		uint16_t get_worldbyid(uint16_t worldid);
 
 	protected:
 		Button::State button_pressed(uint16_t buttonid) override;
@@ -55,24 +60,11 @@ namespace ms
 
 		enum Buttons : uint16_t
 		{
-			BT_WORLD0,	// Scania
-			BT_WORLD1,	// Bera
-			BT_WORLD2,	// Broa
-			BT_WORLD3,	// Windia
-			BT_WORLD4,	// Khaini
-			BT_WORLD5,	// Bellocan
-			BT_WORLD6,	// Mardia
-			BT_WORLD7,	// Kradia
-			BT_WORLD8,	// Yellonde
-			BT_WORLD9,	// Demethos
-			BT_WORLD10,	// Galicia
-			BT_WORLD11,	// El Nido (East Coast)
-			BT_WORLD12,	// Zenith
-			BT_WORLD13,	// Arcania
-			BT_WORLD14,	// Chaos
-			BT_WORLD15,	// Nova
-			BT_WORLD16,	// Renegades
-			BT_WORLD17,	// Reboot
+			BT_WORLD0,
+			BT_WORLD1,
+			BT_WORLD2,
+			BT_WORLD3,
+			BT_WORLD4,
 			BT_CHANNEL0,
 			BT_CHANNEL1,
 			BT_CHANNEL2,
@@ -123,7 +115,21 @@ namespace ms
 			CHAOS,
 			NOVA,
 			RENEGADES,
-			REBOOT
+			AURORA,
+			ELYSIUM1,
+			KOREAN1 = 29,
+			LUNA,
+			ELYSIUM2,
+			LAB = 40,
+			KOREAN2 = 43,
+			KOREAN3,
+			REBOOT1,
+			REBOOT2,
+			PINKBEAN = 48,
+			BURNING,
+			KOREAN4,
+			KOREAN5,
+			TESPIA = 100
 		};
 
 		Text version;
@@ -145,9 +151,15 @@ namespace ms
 		std::vector<Texture> world_textures;
 		std::vector<Texture> recommended_world_textures;
 		std::vector<Texture> recommended_textures;
+		std::map<uint16_t, uint16_t> world_map;
 
 		bool world_selected;
+		bool use_recommended;
 		bool show_recommended;
 		bool draw_chatballoon;
+
+		nl::node worldselect;
+		nl::node worldsrc;
+		nl::node channelsrc;
 	};
 }

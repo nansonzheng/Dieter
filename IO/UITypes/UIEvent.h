@@ -20,7 +20,8 @@
 #include "../UIDragElement.h"
 
 #include "../Components/Slider.h"
-#include "../Graphics/SpecialText.h"
+
+#include "../../Graphics/SpecialText.h"
 
 namespace ms
 {
@@ -36,15 +37,16 @@ namespace ms
 		void draw(float inter) const override;
 		void update() override;
 
-		bool remove_cursor(bool clicked, Point<int16_t> cursorpos) override;
+		void remove_cursor() override;
 		Cursor::State send_cursor(bool clicked, Point<int16_t> cursorpos) override;
 		void send_key(int32_t keycode, bool pressed, bool escape) override;
+
+		UIElement::Type get_type() const override;
 
 	protected:
 		Button::State button_pressed(uint16_t buttonid) override;
 
 	private:
-		void clear_tooltip();
 		void close();
 		std::string get_event_title(uint8_t id);
 		std::string get_event_date(uint8_t id);

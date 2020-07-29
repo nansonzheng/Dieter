@@ -16,6 +16,7 @@
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.		//
 //////////////////////////////////////////////////////////////////////////////////
 #include "UIShop.h"
+
 #include "UINotice.h"
 
 #include "../UI.h"
@@ -23,16 +24,19 @@
 #include "../Components/AreaButton.h"
 #include "../Components/Charset.h"
 #include "../Components/MapleButton.h"
-#include "../Audio/Audio.h"
-#include "../Data/ItemData.h"
 
-#include "../Net/Packets/NpcInteractionPackets.h"
+#include "../../Audio/Audio.h"
+#include "../../Data/ItemData.h"
 
+#include "../../Net/Packets/NpcInteractionPackets.h"
+
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
-	UIShop::UIShop(const CharLook& in_charlook, const Inventory& in_inventory) : UIDragElement<PosSHOP>(Point<int16_t>()), charlook(in_charlook), inventory(in_inventory)
+	UIShop::UIShop(const CharLook& in_charlook, const Inventory& in_inventory) : UIDragElement<PosSHOP>(), charlook(in_charlook), inventory(in_inventory)
 	{
 		nl::node src = nl::nx::ui["UIWindow2.img"]["Shop2"];
 
@@ -106,7 +110,7 @@ namespace ms
 		mesolabel = Text(Text::Font::A11M, Text::Alignment::RIGHT, Color::Name::MINESHAFT);
 
 		buyslider = Slider(
-			Slider::Type::DEFAULT, Range<int16_t>(123, 484), 257, 5, 1,
+			Slider::Type::DEFAULT_SILVER, Range<int16_t>(123, 484), 257, 5, 1,
 			[&](bool upwards)
 			{
 				int16_t shift = upwards ? -1 : 1;
@@ -119,7 +123,7 @@ namespace ms
 		);
 
 		sellslider = Slider(
-			Slider::Type::DEFAULT, Range<int16_t>(123, 484), 488, 5, 1,
+			Slider::Type::DEFAULT_SILVER, Range<int16_t>(123, 484), 488, 5, 1,
 			[&](bool upwards)
 			{
 				int16_t shift = upwards ? -1 : 1;
@@ -232,15 +236,12 @@ namespace ms
 		return Button::State::PRESSED;
 	}
 
-	bool UIShop::remove_cursor(bool clicked, Point<int16_t> cursorpos)
+	void UIShop::remove_cursor()
 	{
-		if (buyslider.remove_cursor(clicked))
-			return true;
+		UIDragElement::remove_cursor();
 
-		if (sellslider.remove_cursor(clicked))
-			return true;
-
-		return UIElement::remove_cursor(clicked, cursorpos);
+		buyslider.remove_cursor();
+		sellslider.remove_cursor();
 	}
 
 	Cursor::State UIShop::send_cursor(bool clicked, Point<int16_t> cursorpos)
@@ -412,6 +413,11 @@ namespace ms
 			exit_shop();
 	}
 
+	UIElement::Type UIShop::get_type() const
+	{
+		return TYPE;
+	}
+
 	void UIShop::clear_tooltip()
 	{
 		UI::get().clear_tooltip(Tooltip::Parent::SHOP);
@@ -466,7 +472,7 @@ namespace ms
 
 		changeselltab(InventoryType::Id::EQUIP);
 
-		active = true;
+		makeactive();
 		rightclicksell = Configuration::get().get_rightclicksell();
 	}
 

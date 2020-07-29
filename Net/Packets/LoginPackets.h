@@ -18,38 +18,16 @@
 #pragma once
 
 #include "../OutPacket.h"
-#include "../Configuration.h"
+
+#include "../../Configuration.h"
 
 namespace ms
 {
-	// Send user selected Gender
-	// Opcode: SET_GENDER(8)
-	class GenderPacket : public OutPacket
-	{
-	public:
-		GenderPacket(const bool female) : OutPacket(OutPacket::Opcode::SET_GENDER)
-		{
-			write_byte(1);
-			write_byte(female);
-		}
-	};
-
-	// Accept the Terms of Service.
-	// Opcode: ACCEPT_TOS(7)
-	class TOSPacket : public OutPacket
-	{
-	public:
-		TOSPacket() : OutPacket(OutPacket::Opcode::ACCEPT_TOS)
-		{
-			write_byte(1);
-		}
-	};
-
-	// Request to be logged-in to an account.
 	// Opcode: LOGIN(1)
 	class LoginPacket : public OutPacket
 	{
 	public:
+		// Request to be logged-in to an account
 		LoginPacket(const std::string& acc, const std::string& pass) : OutPacket(OutPacket::Opcode::LOGIN)
 		{
 			std::string volumeSerialNumber = Configuration::get().get_vol_serial_num();
@@ -66,7 +44,9 @@ namespace ms
 
 			write_string(acc);
 			write_string(pass);
+
 			skip(6);
+
 			write_byte(h);
 			write_byte(w);
 			write_byte(i);
@@ -74,19 +54,11 @@ namespace ms
 		}
 	};
 
-	// Requests the list of worlds and channels.
-	// Opcode: SERVERLIST_REQUEST(11)
-	class ServerRequestPacket : public OutPacket
-	{
-	public:
-		ServerRequestPacket() : OutPacket(OutPacket::Opcode::SERVERLIST_REQUEST) {}
-	};
-
-	// Requests the list of characters on a world.
 	// Opcode: CHARLIST_REQUEST(5)
 	class CharlistRequestPacket : public OutPacket
 	{
 	public:
+		// Requests the list of characters on a world
 		CharlistRequestPacket(uint8_t world, uint8_t channel) : OutPacket(OutPacket::Opcode::CHARLIST_REQUEST)
 		{
 			write_byte(0);
@@ -95,14 +67,64 @@ namespace ms
 		}
 	};
 
-	// Requests being logged-in to a channel server with the specified character.
+	// Opcode: SERVERSTATUS_REQUEST(6)
+	class ServerStatusRequestPacket : public OutPacket
+	{
+	public:
+		// Requests the status of the server
+		ServerStatusRequestPacket(int16_t world) : OutPacket(OutPacket::Opcode::SERVERSTATUS_REQUEST)
+		{
+			write_short(world);
+		}
+	};
+
+	// Opcode: ACCEPT_TOS(7)
+	class TOSPacket : public OutPacket
+	{
+	public:
+		// Accept the Terms of Service
+		TOSPacket() : OutPacket(OutPacket::Opcode::ACCEPT_TOS)
+		{
+			write_byte(1);
+		}
+	};
+
+	// Opcode: SET_GENDER(8)
+	class GenderPacket : public OutPacket
+	{
+	public:
+		// Send user selected Gender
+		GenderPacket(const bool female) : OutPacket(OutPacket::Opcode::SET_GENDER)
+		{
+			write_byte(1);
+			write_byte(female);
+		}
+	};
+
+	// Opcode: SERVERLIST_REQUEST(11)
+	class ServerRequestPacket : public OutPacket
+	{
+	public:
+		// Requests the list of worlds and channels
+		ServerRequestPacket() : OutPacket(OutPacket::Opcode::SERVERLIST_REQUEST) {}
+	};
+
 	// Opcode: PLAYER_LOGIN(20)
 	class PlayerLoginPacket : public OutPacket
 	{
 	public:
+		// Requests being logged-in to a channel server with the specified character
 		PlayerLoginPacket(int32_t cid) : OutPacket(OutPacket::Opcode::PLAYER_LOGIN)
 		{
 			write_int(cid);
 		}
+	};
+
+	// Opcode: LOGIN_START(35)
+	class LoginStartPacket : public OutPacket
+	{
+	public:
+		// Sends whenever we hit the start of the Login screen
+		LoginStartPacket() : OutPacket(OutPacket::Opcode::LOGIN_START) {}
 	};
 }

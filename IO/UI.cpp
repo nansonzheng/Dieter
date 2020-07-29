@@ -16,28 +16,22 @@
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.		//
 //////////////////////////////////////////////////////////////////////////////////
 #include "UI.h"
-#include "UIStateLogin.h"
+
+#include "UIStateCashShop.h"
 #include "UIStateGame.h"
+#include "UIStateLogin.h"
 #include "Window.h"
 
-#include "../IO/UITypes/UIStatsinfo.h"
-#include "../IO/UITypes/UIItemInventory.h"
-#include "../IO/UITypes/UIEquipInventory.h"
-#include "../IO/UITypes/UISkillbook.h"
-#include "../IO/UITypes/UIQuestLog.h"
-#include "../IO/UITypes/UIWorldMap.h"
-#include "../IO/UITypes/UIUserList.h"
-#include "../IO/UITypes/UIChatbar.h"
-#include "../IO/UITypes/UIStatusbar.h"
-#include "../IO/UITypes/UINotice.h"
-#include "../IO/UITypes/UIShop.h"
-#include "../IO/UITypes/UIChannel.h"
-#include "../IO/UITypes/UIJoypad.h"
-#include "../IO/UITypes/UIEvent.h"
-#include "../IO/UITypes/UIChat.h"
-#include "../IO/UITypes/UIKeyConfig.h"
-#include "../IO/UITypes/UIOptionMenu.h"
-#include "../IO/UITypes/UIQuit.h"
+#include "UITypes/UIChannel.h"
+#include "UITypes/UIChat.h"
+#include "UITypes/UIChatBar.h"
+#include "UITypes/UIJoypad.h"
+#include "UITypes/UINpcTalk.h"
+#include "UITypes/UIOptionMenu.h"
+#include "UITypes/UIQuit.h"
+#include "UITypes/UIShop.h"
+#include "UITypes/UIStatusBar.h"
+#include "UITypes/UIWorldMap.h"
 
 namespace ms
 {
@@ -58,6 +52,7 @@ namespace ms
 		state->draw(alpha, cursor.get_position());
 
 		scrollingnotice.draw(alpha);
+
 		cursor.draw(alpha);
 	}
 
@@ -66,6 +61,7 @@ namespace ms
 		state->update();
 
 		scrollingnotice.update();
+
 		cursor.update();
 	}
 
@@ -83,12 +79,15 @@ namespace ms
 	{
 		switch (id)
 		{
-		case State::LOGIN:
-			state = std::make_unique<UIStateLogin>();
-			break;
-		case State::GAME:
-			state = std::make_unique<UIStateGame>();
-			break;
+			case State::LOGIN:
+				state = std::make_unique<UIStateLogin>();
+				break;
+			case State::GAME:
+				state = std::make_unique<UIStateGame>();
+				break;
+			case State::CASHSHOP:
+				state = std::make_unique<UIStateCashShop>();
+				break;
 		}
 	}
 
@@ -150,9 +149,9 @@ namespace ms
 
 			switch (tstate)
 			{
-			case Cursor::State::IDLE:
-				focusedtextfield = {};
-				break;
+				case Cursor::State::IDLE:
+					focusedtextfield = {};
+					break;
 			}
 		}
 	}
@@ -195,20 +194,23 @@ namespace ms
 		{
 			bool ctrl = is_key_down[keyboard.leftctrlcode()] || is_key_down[keyboard.rightctrlcode()];
 
-			if (ctrl)
+			if (ctrl && pressed)
 			{
-				if (!pressed)
-				{
-					KeyAction::Id action = keyboard.get_ctrl_action(keycode);
+				KeyAction::Id action = keyboard.get_ctrl_action(keycode);
 
-					switch (action)
+				if (action == KeyAction::Id::COPY || action == KeyAction::Id::PASTE)
+				{
+					if (focusedtextfield->can_copy_paste())
 					{
-					case KeyAction::Id::COPY:
-						Window::get().setclipboard(focusedtextfield->get_text());
-						break;
-					case KeyAction::Id::PASTE:
-						focusedtextfield->add_string(Window::get().getclipboard());
-						break;
+						switch (action)
+						{
+							case KeyAction::Id::COPY:
+								Window::get().setclipboard(focusedtextfield->get_text());
+								break;
+							case KeyAction::Id::PASTE:
+								focusedtextfield->add_string(Window::get().getclipboard());
+								break;
+						}
 					}
 				}
 			}
@@ -233,7 +235,7 @@ namespace ms
 			bool left_right = keycode == GLFW_KEY_LEFT || keycode == GLFW_KEY_RIGHT;
 			bool arrows = up_down || left_right;
 
-			auto statusbar = UI::get().get_element<UIStatusbar>();
+			auto statusbar = UI::get().get_element<UIStatusBar>();
 			auto channel = UI::get().get_element<UIChannel>();
 			auto worldmap = UI::get().get_element<UIWorldMap>();
 			auto optionmenu = UI::get().get_element<UIOptionMenu>();
@@ -241,15 +243,21 @@ namespace ms
 			auto joypad = UI::get().get_element<UIJoypad>();
 			auto rank = UI::get().get_element<UIRank>();
 			auto quit = UI::get().get_element<UIQuit>();
+			auto npctalk = UI::get().get_element<UINpcTalk>();
 			//auto report = UI::get().get_element<UIReport>();
 			//auto whisper = UI::get().get_element<UIWhisper>();
 
-			if (statusbar && statusbar->is_menu_active())
+			if (npctalk && npctalk->is_active())
+			{
+				npctalk->send_key(mapping.action, pressed, escape);
+				sent = true;
+			}
+			else if (statusbar && statusbar->is_menu_active())
 			{
 				statusbar->send_key(mapping.action, pressed, escape);
 				sent = true;
 			}
-			else if (channel && channel->is_active())
+			else if (channel && channel->is_active() && mapping.action != KeyAction::Id::CHANGECHANNEL)
 			{
 				channel->send_key(mapping.action, pressed, escape);
 				sent = true;
@@ -315,6 +323,8 @@ namespace ms
 					types.emplace_back(UIElement::Type::SKILLBOOK);
 					types.emplace_back(UIElement::Type::QUESTLOG);
 					types.emplace_back(UIElement::Type::USERLIST);
+					types.emplace_back(UIElement::Type::NPCTALK);
+					types.emplace_back(UIElement::Type::CHARINFO);
 				}
 				else if (enter)
 				{
@@ -328,6 +338,7 @@ namespace ms
 				{
 					// Game
 					types.emplace_back(UIElement::Type::ITEMINVENTORY);
+					types.emplace_back(UIElement::Type::EQUIPINVENTORY);
 					types.emplace_back(UIElement::Type::SKILLBOOK);
 					types.emplace_back(UIElement::Type::QUESTLOG);
 					types.emplace_back(UIElement::Type::USERLIST);
@@ -347,7 +358,7 @@ namespace ms
 
 			if (!sent)
 			{
-				auto chatbar = UI::get().get_element<UIChatbar>();
+				auto chatbar = UI::get().get_element<UIChatBar>();
 
 				if (escape)
 				{
@@ -381,15 +392,16 @@ namespace ms
 	void UI::focus_textfield(Textfield* tofocus)
 	{
 		if (focusedtextfield)
-		{
 			focusedtextfield->set_state(Textfield::State::NORMAL);
-		}
 
 		focusedtextfield = tofocus;
 	}
 
 	void UI::remove_textfield()
 	{
+		if (focusedtextfield)
+			focusedtextfield->set_state(Textfield::State::NORMAL);
+
 		focusedtextfield = {};
 	}
 
@@ -418,9 +430,8 @@ namespace ms
 		state->show_item(parent, item_id);
 	}
 
-	void UI::show_skill(Tooltip::Parent parent, int32_t skill_id,
-		int32_t level, int32_t masterlevel, int64_t expiration) {
-
+	void UI::show_skill(Tooltip::Parent parent, int32_t skill_id, int32_t level, int32_t masterlevel, int64_t expiration)
+	{
 		state->show_skill(parent, skill_id, level, masterlevel, expiration);
 	}
 
@@ -429,29 +440,20 @@ namespace ms
 		state->show_text(parent, text);
 	}
 
+	void UI::show_map(Tooltip::Parent parent, std::string name, std::string description, int32_t mapid, bool bolded)
+	{
+		state->show_map(parent, name, description, mapid, bolded);
+	}
+
 	Keyboard& UI::get_keyboard()
 	{
 		return keyboard;
 	}
 
-	int64_t UI::get_uptime()
-	{
-		return state->get_uptime();
-	}
-
-	uint16_t UI::get_uplevel()
-	{
-		return state->get_uplevel();
-	}
-
-	int64_t UI::get_upexp()
-	{
-		return state->get_upexp();
-	}
-
 	void UI::remove(UIElement::Type type)
 	{
 		focusedtextfield = {};
+
 		state->remove(type);
 	}
 }

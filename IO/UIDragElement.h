@@ -28,25 +28,16 @@ namespace ms
 	class UIDragElement : public UIElement
 	{
 	public:
-		bool remove_cursor(bool clicked, Point<int16_t> cursorpos) override
+		void remove_cursor() override
 		{
+			UIElement::remove_cursor();
+
 			if (dragged)
 			{
-				if (clicked)
-				{
-					position = cursorpos - cursoroffset;
+				dragged = false;
 
-					return true;
-				}
-				else
-				{
-					dragged = false;
-
-					Setting<T>::get().save(position);
-				}
+				Setting<T>::get().save(position);
 			}
-
-			return false;
 		}
 
 		Cursor::State send_cursor(bool clicked, Point<int16_t> cursorpos) override
@@ -81,6 +72,8 @@ namespace ms
 		}
 
 	protected:
+		UIDragElement() : UIDragElement(Point<int16_t>(0, 0)) {}
+
 		UIDragElement(Point<int16_t> d) : dragarea(d)
 		{
 			position = Setting<T>::get().load();

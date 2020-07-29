@@ -17,20 +17,21 @@
 //////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include "GL/glew.h"
+#define GLEW_STATIC
+#include <glew.h>
 
 #include <array>
 
 namespace ms
 {
-	// Simple color class which stores r-g-b-a components.
+	// Simple color class which stores RGBA components
 	class Color
 	{
 	public:
 		static constexpr size_t LENGTH = 4;
 		using underlying_t = std::array<float, LENGTH>;
 
-		// Codes of predefined colors.
+		// Codes of predefined colors
 		enum Code : uint32_t
 		{
 			CNONE = 0x00000000,
@@ -44,7 +45,7 @@ namespace ms
 			CPURPLE = 0xFF00FFFF
 		};
 
-		// Name of predefined colors.
+		// Name of predefined colors
 		enum Name : uint32_t
 		{
 			BLACK,
@@ -80,6 +81,14 @@ namespace ms
 			GRAYOLIVE,
 			ELECTRICLIME,
 			SUPERNOVA,
+			CHARTREUSE,
+			MALIBU,
+			SILVERCHALICE,
+			GRAY,
+			TORCHRED,
+			CREAM,
+			SMALT,
+			PRUSSIANBLUE,
 			NUM_COLORS
 		};
 
@@ -118,7 +127,15 @@ namespace ms
 			{ 0.00f, 0.50f, 0.00f }, // Japanese Laurel (Mob HP Bar)
 			{ 0.67f, 0.67f, 0.60f }, // Gray Olive
 			{ 0.80f, 1.00f, 0.00f }, // Electric Lime
-			{ 1.00f, 0.80f, 0.00f }  // Supernova
+			{ 1.00f, 0.80f, 0.00f }, // Supernova
+			{ 0.47f, 1.00f, 0.00f }, // Chartreuse
+			{ 0.47f, 0.80f, 1.00f }, // Malibu
+			{ 0.67f, 0.67f, 0.67f }, // Silver Chalice
+			{ 0.54f, 0.54f, 0.54f }, // Gray
+			{ 0.94f, 0.00f, 0.20f }, // Torch Red
+			{ 1.00f, 1.00f, 0.80f }, // Cream
+			{ 0.00f, 0.23f, 0.56f }, // Smalt
+			{ 0.01f, 0.19f, 0.28f }  // Prussian Blue
 		};
 
 		// Create a color by an array of real numbers [0.0f, 1.0f]
@@ -136,7 +153,7 @@ namespace ms
 			static_cast<float>(alpha) / 255
 		) {}
 
-		// Create a color by code.
+		// Create a color by code
 		constexpr Color(uint32_t code) : Color(
 			static_cast<uint8_t>(code >> 24),
 			static_cast<uint8_t>(code >> 16),
@@ -144,53 +161,53 @@ namespace ms
 			static_cast<uint8_t>(code)
 		) {}
 
-		// Create a color by named code.
+		// Create a color by named code
 		constexpr Color(Code code) : Color((uint32_t)code) {}
 		constexpr Color() : Color(Code::CNONE) {}
 
-		// Check whether the color is completely invisble.
+		// Check whether the color is completely invisible
 		constexpr bool invisible() const
 		{
 			return rgba[3] <= 0.0f;
 		}
 
-		// Return the red component.
+		// Return the red component
 		constexpr float r() const
 		{
 			return rgba[0];
 		}
 
-		// Return the green component.
+		// Return the green component
 		constexpr float g() const
 		{
 			return rgba[1];
 		}
 
-		// Return the blue component.
+		// Return the blue component
 		constexpr float b() const
 		{
 			return rgba[2];
 		}
 
-		// Return the alpha (opacity) component.
+		// Return the alpha (opacity) component
 		constexpr float a() const
 		{
 			return rgba[3];
 		}
 
-		// Return all components.
+		// Return all components
 		const float* data() const;
 
-		// Return a begin iterator.
+		// Return a begin iterator
 		underlying_t::const_iterator begin() const;
 
-		// Return an end iterator.
+		// Return an end iterator
 		underlying_t::const_iterator end() const;
 
-		// Blend the second color into the first.
+		// Blend the second color into the first
 		Color blend(const Color& other, float alpha) const;
 
-		// Combine two colors.
+		// Combine two colors
 		constexpr Color operator*(const Color& o) const
 		{
 			return Color(
@@ -201,7 +218,7 @@ namespace ms
 			);
 		}
 
-		// Combine two colors.
+		// Combine two colors
 		constexpr Color operator/(const Color& o) const
 		{
 			return Color(

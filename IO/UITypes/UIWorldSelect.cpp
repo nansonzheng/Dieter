@@ -16,73 +16,92 @@
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.		//
 //////////////////////////////////////////////////////////////////////////////////
 #include "UIWorldSelect.h"
+
 #include "UILoginNotice.h"
-#include "UILoginwait.h"
+#include "UILoginWait.h"
 #include "UIRegion.h"
 
 #include "../UI.h"
 
-#include "../Audio/Audio.h"
 #include "../Components/MapleButton.h"
 #include "../Components/TwoSpriteButton.h"
 
-#include "../Net/Packets/LoginPackets.h"
+#include "../../Audio/Audio.h"
+#include "../../Util/Randomizer.h"
 
-#include <ctime>
+#include "../../Net/Packets/LoginPackets.h"
 
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
-	UIWorldSelect::UIWorldSelect() : UIElement(Point<int16_t>(), Point<int16_t>(800, 600))
+	UIWorldSelect::UIWorldSelect() : UIElement(Point<int16_t>(0, 0), Point<int16_t>(800, 600))
 	{
 		worldcount = 0;
 		recommended_worldcount = 0;
 		recommended_worldid = 0;
 		world_selected = false;
+		use_recommended = true;
 		show_recommended = false;
 		draw_chatballoon = true;
 
 		std::string version_text = Configuration::get().get_version();
-		version = Text(Text::Font::A11M, Text::Alignment::LEFT, Color::Name::LEMONGRASS, "Ver. " + version_text);
+		version = Text(Text::Font::A11B, Text::Alignment::LEFT, Color::Name::LEMONGRASS, "Ver. " + version_text);
 
 		recommended_message = Text(Text::Font::A11M, Text::Alignment::CENTER, Color::Name::JAMBALAYA, "", 100, true, 5);
 
-		worldsrc_pos = Point<int16_t>(646, 20);
-		channelsrc_pos = Point<int16_t>(203, 154);
+		Point<int16_t> background_pos = Point<int16_t>(400, 301);
+		channelsrc_pos = Point<int16_t>(203, 164);
 
 		worldid = Setting<DefaultWorld>::get().load();
 		channelid = Setting<DefaultChannel>::get().load();
+		uint8_t regionid = Setting<DefaultRegion>::get().load();
 
-		nl::node obj = nl::nx::map["Obj"]["login.img"];
+		nl::node obj = nl::nx::mapLatest["Obj"]["login.img"];
 		nl::node login = nl::nx::ui["Login.img"];
-		nl::node worldselect = login["WorldSelect"];
-		nl::node worldsrc = worldselect["BtWorld"]["release"];
-		nl::node channelsrc = worldselect["BtChannel"];
+		worldselect = login["WorldSelect"];
+		worldsrc = worldselect["BtWorld"]["release"];
+		channelsrc = worldselect["BtChannel"];
 		nl::node common = login["Common"];
+		nl::node frame = nl::nx::mapLatest["Obj"]["login.img"]["Common"]["frame"]["2"]["0"];
 
-		std::srand(std::time(NULL)); // Generate a new seed
+		set_region(regionid);
 
-		int background = rand() % 2;
+		sprites.emplace_back(obj["WorldSelect"]["default"][0], background_pos);
 
-		if (background == 0)
-			sprites.emplace_back(obj["WorldSelect"]["RetroWorld"]["0"], Point<int16_t>(370, 300)); // From v203.3
-		else if (background == 1)
-			sprites.emplace_back(obj["WorldSelect"]["SavageT"]["0"], Point<int16_t>(370, 300)); // From v203.3
-		else
-			sprites.emplace_back(obj["WorldSelect"]["default"]["0"], Point<int16_t>(399, 290)); // From v203.3
+		std::vector<std::string> backgrounds = { "16thNewtro" };
+		auto backgrounds_size = backgrounds.size();
 
-		sprites.emplace_back(common["frame"], Point<int16_t>(399, 289));
-		sprites.emplace_back(common["step"]["1"], Point<int16_t>(40, -10));
+		if (backgrounds_size > 0)
+		{
+			if (backgrounds_size > 1)
+			{
+				auto randomizer = Randomizer();
+				int32_t index = randomizer.next_int(backgrounds_size);
 
-		buttons[Buttons::BT_VIEWALL] = std::make_unique<MapleButton>(worldselect["BtViewAll"], Point<int16_t>(0, 43));
-		buttons[Buttons::BT_VIEWRECOMMENDED] = std::make_unique<MapleButton>(worldselect["BtViewChoice"], Point<int16_t>(0, 43));
-		buttons[Buttons::BT_VIEWRECOMMENDED_SELECT] = std::make_unique<MapleButton>(worldselect["alert"]["BtChoice"], Point<int16_t>(349, 317));
-		buttons[Buttons::BT_VIEWRECOMMENDED_CANCEL] = std::make_unique<MapleButton>(worldselect["alert"]["BtClose"], Point<int16_t>(407, 317));
-		buttons[Buttons::BT_VIEWRECOMMENDED_PREV] = std::make_unique<MapleButton>(worldselect["alert"]["BtArrowL"], Point<int16_t>(338, 234));
-		buttons[Buttons::BT_VIEWRECOMMENDED_NEXT] = std::make_unique<MapleButton>(worldselect["alert"]["BtArrowR"], Point<int16_t>(439, 234));
+				sprites.emplace_back(obj["WorldSelect"][backgrounds[index]][0], background_pos);
+			}
+			else
+			{
+				sprites.emplace_back(obj["WorldSelect"][backgrounds[0]][0], background_pos);
+			}
+		}
+
+		sprites.emplace_back(frame, Point<int16_t>(400, 300));
+		sprites.emplace_back(common["frame"], Point<int16_t>(400, 300));
+		sprites.emplace_back(common["step"]["1"], Point<int16_t>(40, 0));
+
+		buttons[Buttons::BT_VIEWALL] = std::make_unique<MapleButton>(worldselect["BtViewAll"], Point<int16_t>(0, 53));
+		buttons[Buttons::BT_VIEWRECOMMENDED] = std::make_unique<MapleButton>(worldselect["BtViewChoice"], Point<int16_t>(0, 53));
+		buttons[Buttons::BT_VIEWRECOMMENDED_SELECT] = std::make_unique<MapleButton>(worldselect["alert"]["BtChoice"], Point<int16_t>(349, 327));
+		buttons[Buttons::BT_VIEWRECOMMENDED_CANCEL] = std::make_unique<MapleButton>(worldselect["alert"]["BtClose"], Point<int16_t>(407, 327));
+		buttons[Buttons::BT_VIEWRECOMMENDED_PREV] = std::make_unique<MapleButton>(worldselect["alert"]["BtArrowL"], Point<int16_t>(338, 244));
+		buttons[Buttons::BT_VIEWRECOMMENDED_NEXT] = std::make_unique<MapleButton>(worldselect["alert"]["BtArrowR"], Point<int16_t>(439, 244));
 
 		buttons[Buttons::BT_VIEWALL]->set_active(false);
+		buttons[Buttons::BT_VIEWRECOMMENDED]->set_active(use_recommended ? true : false);
 		buttons[Buttons::BT_VIEWRECOMMENDED_SELECT]->set_active(false);
 		buttons[Buttons::BT_VIEWRECOMMENDED_CANCEL]->set_active(false);
 		buttons[Buttons::BT_VIEWRECOMMENDED_PREV]->set_active(false);
@@ -92,23 +111,8 @@ namespace ms
 
 		recommended_textures.emplace_back(worldselect["alert"]["backgrd"]);
 
-		buttons[Buttons::BT_CHANGEREGION] = std::make_unique<MapleButton>(worldselect["BtRegion"], Point<int16_t>(3, 117));
-		buttons[Buttons::BT_QUITGAME] = std::make_unique<MapleButton>(common["BtExit"], Point<int16_t>(0, 505));
-
-		for (size_t i = Buttons::BT_WORLD0; i < Buttons::BT_WORLD17; i++)
-		{
-			std::string world = std::to_string(i);
-			world_textures.emplace_back(channelsrc["release"]["layer:" + world]);
-			recommended_world_textures.emplace_back(worldselect["world"][world]);
-
-			buttons[Buttons::BT_WORLD0 + i] = std::make_unique<TwoSpriteButton>(worldsrc["button:" + world]["normal"]["0"], worldsrc["button:" + world]["keyFocused"]["0"], worldsrc_pos);
-			buttons[Buttons::BT_WORLD0 + i]->set_active(false);
-		}
-
-		recommended_world_textures.emplace_back(worldselect["world"][45]);
-
-		buttons[Buttons::BT_WORLD17] = std::make_unique<TwoSpriteButton>(worldsrc["button:45"]["normal"]["0"], worldsrc["button:45"]["keyFocused"]["0"], worldsrc_pos);
-		buttons[Buttons::BT_WORLD17]->set_active(false);
+		buttons[Buttons::BT_CHANGEREGION] = std::make_unique<MapleButton>(worldselect["BtRegion"], Point<int16_t>(3, 127));
+		buttons[Buttons::BT_QUITGAME] = std::make_unique<MapleButton>(common["BtExit"], Point<int16_t>(0, 515));
 
 		for (size_t i = 0; i < Buttons::BT_ENTERWORLD - Buttons::BT_CHANNEL0; i++)
 		{
@@ -118,13 +122,27 @@ namespace ms
 			buttons[Buttons::BT_CHANNEL0 + i]->set_active(false);
 		}
 
-		worlds_background = worldsrc["layer:bg"];
 		channels_background = channelsrc["layer:bg"];
 
 		buttons[Buttons::BT_ENTERWORLD] = std::make_unique<MapleButton>(channelsrc["button:GoWorld"], channelsrc_pos);
 		buttons[Buttons::BT_ENTERWORLD]->set_active(false);
 
 		chatballoon.change_text("Please select the World you would like to play in.");
+
+		if (Configuration::get().get_auto_login())
+		{
+			auto world = Configuration::get().get_auto_world();
+			auto channel = Configuration::get().get_auto_channel();
+
+			Configuration::get().set_worldid(world);
+			Configuration::get().set_channelid(channel);
+
+			UI::get().emplace<UILoginWait>();
+			auto loginwait = UI::get().get_element<UILoginWait>();
+
+			if (loginwait && loginwait->is_active())
+				CharlistRequestPacket(world, channel).dispatch();
+		}
 	}
 
 	void UIWorldSelect::draw(float alpha) const
@@ -135,9 +153,9 @@ namespace ms
 
 		if (show_recommended)
 		{
-			recommended_textures[0].draw(position + Point<int16_t>(302, 142));
-			recommended_world_textures[recommended_worldid].draw(position + Point<int16_t>(336, 177));
-			recommended_message.draw(position + Point<int16_t>(401, 249));
+			recommended_textures[0].draw(position + Point<int16_t>(302, 152));
+			recommended_world_textures[recommended_worldid].draw(position + Point<int16_t>(336, 187));
+			recommended_message.draw(position + Point<int16_t>(401, 259));
 		}
 
 		if (world_selected)
@@ -148,10 +166,10 @@ namespace ms
 
 		UIElement::draw_buttons(alpha);
 
-		version.draw(position + Point<int16_t>(707, -9));
+		version.draw(position + Point<int16_t>(707, 4));
 
 		if (draw_chatballoon)
-			chatballoon.draw(position + Point<int16_t>(503, 245));
+			chatballoon.draw(position + Point<int16_t>(501, 105));
 	}
 
 	Cursor::State UIWorldSelect::send_cursor(bool clicked, Point<int16_t> cursorpos)
@@ -378,6 +396,11 @@ namespace ms
 		}
 	}
 
+	UIElement::Type UIWorldSelect::get_type() const
+	{
+		return TYPE;
+	}
+
 	void UIWorldSelect::draw_world()
 	{
 		if (worldcount <= 0)
@@ -403,10 +426,13 @@ namespace ms
 
 	void UIWorldSelect::add_recommended_world(RecommendedWorld world)
 	{
-		recommended_worlds.emplace_back(std::move(world));
-		recommended_worldcount++;
+		if (use_recommended)
+		{
+			recommended_worlds.emplace_back(std::move(world));
+			recommended_worldcount++;
 
-		buttons[Buttons::BT_VIEWRECOMMENDED]->set_state(Button::State::NORMAL);
+			buttons[Buttons::BT_VIEWRECOMMENDED]->set_state(Button::State::NORMAL);
+		}
 	}
 
 	void UIWorldSelect::change_world(World selectedWorld)
@@ -426,13 +452,47 @@ namespace ms
 
 	void UIWorldSelect::remove_selected()
 	{
-		active = false;
+		deactivate();
 
 		Sound(Sound::Name::SCROLLUP).play();
 
 		world_selected = false;
+
 		clear_selected_world();
+
 		draw_chatballoon = false;
+	}
+
+	void UIWorldSelect::set_region(uint8_t regionid)
+	{
+		world_map[Buttons::BT_WORLD0] = regionid == 5 ? Worlds::SCANIA : Worlds::LUNA;
+		world_map[Buttons::BT_WORLD1] = Worlds::BERA;
+		world_map[Buttons::BT_WORLD2] = Worlds::AURORA;
+		world_map[Buttons::BT_WORLD3] = Worlds::ELYSIUM1;
+		world_map[Buttons::BT_WORLD4] = Worlds::REBOOT1;
+
+		nl::node region = worldsrc["index"][regionid];
+
+		worlds_background = region["layer:bg"];
+
+		worldsrc_pos = region["pos"];
+
+		for (size_t i = Buttons::BT_WORLD0; i <= Buttons::BT_WORLD4; i++)
+		{
+			std::string world = std::to_string(world_map[i]);
+			world_textures.emplace_back(channelsrc["release"]["layer:" + world]);
+			recommended_world_textures.emplace_back(worldselect["world"][world]);
+
+			nl::node worldbtn = worldsrc["button:" + world];
+
+			buttons[Buttons::BT_WORLD0 + i] = std::make_unique<TwoSpriteButton>(worldbtn["normal"]["0"], worldbtn["keyFocused"]["0"], worldsrc_pos + Point<int16_t>(region["origin"][i + 1]));
+			buttons[Buttons::BT_WORLD0 + i]->set_active(false);
+		}
+	}
+
+	uint16_t UIWorldSelect::get_worldbyid(uint16_t worldid)
+	{
+		return world_map.find(worldid)->second;
 	}
 
 	Button::State UIWorldSelect::button_pressed(uint16_t id)
@@ -517,7 +577,9 @@ namespace ms
 
 			buttons[Buttons::BT_WORLD0 + worldid]->set_state(Button::State::NORMAL);
 
-			worldid = static_cast<uint8_t>(id - Buttons::BT_WORLD0);
+			worldid = id - Buttons::BT_WORLD0;
+
+			ServerStatusRequestPacket(worldid).dispatch();
 
 			world_selected = true;
 			clear_selected_world();
@@ -554,8 +616,8 @@ namespace ms
 		Configuration::get().set_worldid(worldid);
 		Configuration::get().set_channelid(channelid);
 
-		UI::get().emplace<UILoginwait>();
-		auto loginwait = UI::get().get_element<UILoginwait>();
+		UI::get().emplace<UILoginWait>();
+		auto loginwait = UI::get().get_element<UILoginWait>();
 
 		if (loginwait && loginwait->is_active())
 			CharlistRequestPacket(worldid, channelid).dispatch();
@@ -610,43 +672,56 @@ namespace ms
 
 	uint16_t UIWorldSelect::get_next_world(uint16_t id, bool upward)
 	{
-		if (id == Worlds::SCANIA)
-			return (upward) ? Worlds::WINDIA : Worlds::REBOOT;
-		else if (id == Worlds::BERA)
-			return (upward) ? Worlds::NOVA : Worlds::BROA;
-		else if (id == Worlds::BROA)
-			return (upward) ? Worlds::BERA : Worlds::KHAINI;
-		else if (id == Worlds::WINDIA)
-			return (upward) ? Worlds::KHAINI : Worlds::SCANIA;
-		else if (id == Worlds::KHAINI)
-			return (upward) ? Worlds::BROA : Worlds::WINDIA;
-		else if (id == Worlds::BELLOCAN)
-			return (upward) ? Worlds::YELLONDE : Worlds::CHAOS;
-		else if (id == Worlds::MARDIA)
-			return (upward) ? Worlds::DEMETHOS : Worlds::YELLONDE;
-		else if (id == Worlds::KRADIA)
-			return (upward) ? Worlds::CHAOS : Worlds::NOVA;
-		else if (id == Worlds::YELLONDE)
-			return (upward) ? Worlds::MARDIA : Worlds::BELLOCAN;
-		else if (id == Worlds::DEMETHOS)
-			return (upward) ? Worlds::ELNIDO : Worlds::MARDIA;
-		else if (id == Worlds::GALICIA)
-			return (upward) ? Worlds::REBOOT : Worlds::RENEGADES;
-		else if (id == Worlds::ELNIDO)
-			return (upward) ? Worlds::ZENITH : Worlds::DEMETHOS;
-		else if (id == Worlds::ZENITH)
-			return (upward) ? Worlds::ARCANIA : Worlds::ELNIDO;
-		else if (id == Worlds::ARCANIA)
-			return (upward) ? Worlds::RENEGADES : Worlds::ZENITH;
-		else if (id == Worlds::CHAOS)
-			return (upward) ? Worlds::BELLOCAN : Worlds::KRADIA;
-		else if (id == Worlds::NOVA)
-			return (upward) ? Worlds::KRADIA : Worlds::BERA;
-		else if (id == Worlds::RENEGADES)
-			return (upward) ? Worlds::GALICIA : Worlds::ARCANIA;
-		else if (id == Worlds::REBOOT)
-			return (upward) ? Worlds::SCANIA : Worlds::GALICIA;
+		uint16_t next_world;
+
+		if (world_map[Buttons::BT_WORLD0] == Worlds::SCANIA)
+		{
+			switch (id)
+			{
+				case Buttons::BT_WORLD0:
+					next_world = (upward) ? Worlds::REBOOT1 : Worlds::BERA;
+					break;
+				case Buttons::BT_WORLD1:
+					next_world = (upward) ? Worlds::SCANIA : Worlds::AURORA;
+					break;
+				case Buttons::BT_WORLD2:
+					next_world = (upward) ? Worlds::BERA : Worlds::ELYSIUM1;
+					break;
+				case Buttons::BT_WORLD3:
+					next_world = (upward) ? Worlds::AURORA : Worlds::REBOOT1;
+					break;
+				case Buttons::BT_WORLD4:
+					next_world = (upward) ? Worlds::ELYSIUM1 : Worlds::SCANIA;
+					break;
+				default:
+					break;
+			}
+		}
 		else
-			return Worlds::SCANIA;
+		{
+			switch (id)
+			{
+				case Buttons::BT_WORLD0:
+					next_world = (upward) ? Worlds::REBOOT1 : Worlds::REBOOT1;
+					break;
+				case Buttons::BT_WORLD4:
+					next_world = (upward) ? Worlds::SCANIA : Worlds::SCANIA;
+					break;
+				default:
+					break;
+			}
+		}
+
+		auto world = world_map.begin();
+
+		while (world != world_map.end())
+		{
+			if (world->second == next_world)
+				return world->first;
+
+			world++;
+		}
+
+		return Worlds::SCANIA;
 	}
 }

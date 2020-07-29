@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////
+﻿//////////////////////////////////////////////////////////////////////////////////
 //	This file is part of the continued Journey MMORPG client					//
 //	Copyright (C) 2015-2019  Daniel Allendorf, Ryan Payton						//
 //																				//
@@ -17,19 +17,22 @@
 //////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
+#include "../MapleStory.h"
+
+#ifdef USE_NX
 #include "../Error.h"
 
-#include <cstdint>
 #include <array>
 
 namespace ms
 {
 	namespace NxFiles
 	{
-		// Number of needed files.
-		constexpr uint8_t NUM_FILES = 17;
+		// Number of needed files
+		constexpr uint8_t NUM_FILES = 19;
 
-		// Names of the needed game files.
+
+		// Names of the needed game files
 		constexpr std::array<const char*, NUM_FILES> filenames =
 		{
 			"Base.nx",
@@ -38,21 +41,24 @@ namespace ms
 			"Etc.nx",
 			"Item.nx",
 			"Map.nx",
-			"Map001.nx",
+			"Map001.nx",	// From latest
+			"MapLatest.nx",	// From latest
+			"MapPretty.nx",	// From v167
 			"Mob.nx",
 			"Morph.nx",
 			"Npc.nx",
 			"Quest.nx",
 			"Reactor.nx",
 			"Skill.nx",
-			"Sound.nx",
+			"Sound.nx",		// From latest
 			"String.nx",
 			"TamingMob.nx",
-			"UI.nx"
+			"UI.nx"			// From latest
 		};
 
-		// Initialize nlnx.
-		// When successfull also tests if the UI file contains valid images.
+		// Initialize NX
+		// When successful test if the UI file is the correct version
 		Error init();
 	};
 }
+#endif

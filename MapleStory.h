@@ -15,17 +15,16 @@
 //	You should have received a copy of the GNU Affero General Public License	//
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.		//
 //////////////////////////////////////////////////////////////////////////////////
+#pragma once
 
-// Define program attributes here
-
-// USE_ASIO : Use asio for networking, if not defined use Winsock.
+// If defined use Asio for networking, otherwise use Winsock.
 //#define USE_ASIO
 
-// USE_XXHASH : Use xxhash for file check (additional dependency)
-//#define USE_XXHASH
-
-// USE_CRYPTO : Use cryptography for communication with the server.
+// Use cryptography for communication with the server
 #define USE_CRYPTO
 
-// PRINT_WARNINGS : Print warnings and minor errors to the console.
-#define PRINT_WARNINGS
+// If defined use NX, otherwise use WZ.
+#define USE_NX
+
+// Run in debug mode
+#define DEBUG

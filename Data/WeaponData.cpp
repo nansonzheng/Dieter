@@ -17,10 +17,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 #include "WeaponData.h"
 
-#include "../Console.h"
-
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
-#include <nlnx/node.hpp>
+#endif
 
 namespace ms
 {
@@ -28,7 +27,7 @@ namespace ms
 	{
 		int32_t prefix = equipid / 10000;
 		type = Weapon::by_value(prefix);
-		twohanded = (prefix == Weapon::STAFF) || (prefix >= Weapon::SWORD_2H && prefix <= Weapon::POLEARM) || (prefix == Weapon::CROSSBOW);
+		twohanded = prefix == Weapon::Type::STAFF || (prefix >= Weapon::Type::SWORD_2H && prefix <= Weapon::Type::POLEARM) || prefix == Weapon::Type::CROSSBOW;
 
 		nl::node src = nl::nx::character["Weapon"]["0" + std::to_string(equipid) + ".img"]["info"];
 

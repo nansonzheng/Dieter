@@ -19,7 +19,7 @@
 
 #include "../UIElement.h"
 
-#include "../Graphics/Text.h"
+#include "../../Graphics/Text.h"
 
 #include <deque>
 
@@ -38,7 +38,7 @@ namespace ms
 		Text shadow;
 		Linear<float> opacity;
 
-		// 8 seconds.
+		// 8 seconds
 		static constexpr int64_t FADE_DURATION = 8'000;
 	};
 
@@ -54,11 +54,14 @@ namespace ms
 
 		void draw(float alpha) const override;
 		void update() override;
+		void update_screen(int16_t new_width, int16_t new_height) override;
+
+		UIElement::Type get_type() const override;
 
 		void show_status(Color::Name color, const std::string& message);
 
 	private:
-		static constexpr size_t MAX_MESSAGES = 5;
+		static constexpr size_t MAX_MESSAGES = 6;
 
 		std::deque<StatusInfo> statusinfos;
 	};

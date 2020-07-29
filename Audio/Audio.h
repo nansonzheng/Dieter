@@ -18,24 +18,27 @@
 #pragma once
 
 #include "../Error.h"
+#include "../MapleStory.h"
 
 #include "../Template/EnumMap.h"
 
 #include <unordered_map>
-#include <cstdint>
-#include <string>
 
+#ifdef USE_NX
 #include <nlnx/node.hpp>
+#else
+#include "../Util/WzFiles.h"
+#endif
 
 namespace ms
 {
 	class Sound
 	{
 	public:
-		// Preloaded sounds.
+		// Preloaded sounds
 		enum Name
 		{
-			// UI
+			/// UI
 			BUTTONCLICK,
 			BUTTONOVER,
 			CHARSELECT,
@@ -44,6 +47,7 @@ namespace ms
 			MENUUP,
 			RACESELECT,
 			SCROLLUP,
+			SELECTMAP,
 			TAB,
 			WORLDSELECT,
 			DRAGSTART,
@@ -51,11 +55,10 @@ namespace ms
 			WORLDMAPOPEN,
 			WORLDMAPCLOSE,
 
-			// Login
-			SELECTCHAR,
+			/// Login
 			GAMESTART,
 
-			// Game
+			/// Game
 			JUMP,
 			DROP,
 			PICKUP,
@@ -66,6 +69,7 @@ namespace ms
 		};
 
 		Sound(Name name);
+		Sound(int32_t itemid);
 		Sound(nl::node src);
 		Sound();
 
@@ -81,10 +85,14 @@ namespace ms
 		static void play(size_t id);
 
 		static size_t add_sound(nl::node src);
-		static void add_sound(Sound::Name name, nl::node src);
+		static void add_sound(Name name, nl::node src);
+		static void add_sound(std::string itemid, nl::node src);
+
+		static std::string format_id(int32_t itemid);
 
 		static std::unordered_map<size_t, uint64_t> samples;
 		static EnumMap<Name, size_t> soundids;
+		static std::unordered_map<std::string, size_t> itemids;
 	};
 
 	class Music

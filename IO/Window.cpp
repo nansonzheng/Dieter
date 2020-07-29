@@ -16,14 +16,11 @@
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.		//
 //////////////////////////////////////////////////////////////////////////////////
 #include "Window.h"
+
 #include "UI.h"
 
-#include "../Console.h"
-#include "../Constants.h"
 #include "../Configuration.h"
 #include "../Timer.h"
-
-#include "../Graphics/GraphicsGL.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -48,7 +45,7 @@ namespace ms
 
 	void error_callback(int no, const char* description)
 	{
-		Console::get().print("glfw error: " + std::string(description) + " (" + std::to_string(no) + ")");
+		std::cout << "GLFW error [" << no << "]: " << description << std::endl;
 	}
 
 	void key_callback(GLFWwindow*, int key, int, int action, int)
@@ -165,7 +162,13 @@ namespace ms
 		glLoadIdentity();
 
 		glfwSetInputMode(glwnd, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-		glfwSetInputMode(glwnd, GLFW_STICKY_KEYS, 1);
+
+		double xpos, ypos;
+
+		glfwGetCursorPos(glwnd, &xpos, &ypos);
+		cursor_callback(glwnd, xpos, ypos);
+
+		glfwSetInputMode(glwnd, GLFW_STICKY_KEYS, GL_TRUE);
 		glfwSetKeyCallback(glwnd, key_callback);
 		glfwSetMouseButtonCallback(glwnd, mousekey_callback);
 		glfwSetCursorPosCallback(glwnd, cursor_callback);
@@ -175,7 +178,7 @@ namespace ms
 
 		char buf[256];
 		GetCurrentDirectoryA(256, buf);
-		strcat(buf, "\\Icon.png");
+		strcat_s(buf, sizeof(buf), "\\Icon.png");
 
 		GLFWimage images[1];
 

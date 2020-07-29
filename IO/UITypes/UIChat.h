@@ -20,7 +20,6 @@
 #include "../UIDragElement.h"
 
 #include "../Components/Charset.h"
-#include "../Graphics/Text.h"
 
 namespace ms
 {
@@ -34,9 +33,10 @@ namespace ms
 		UIChat();
 
 		void draw(float inter) const override;
-		void update() override;
 
 		void send_key(int32_t keycode, bool pressed, bool escape) override;
+
+		UIElement::Type get_type() const override;
 
 	protected:
 		Button::State button_pressed(uint16_t buttonid) override;
@@ -72,9 +72,10 @@ namespace ms
 		UIRank();
 
 		void draw(float inter) const override;
-		void update() override;
 
 		void send_key(int32_t keycode, bool pressed, bool escape) override;
+
+		UIElement::Type get_type() const override;
 
 	protected:
 		Button::State button_pressed(uint16_t buttonid) override;

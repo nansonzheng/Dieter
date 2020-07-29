@@ -16,11 +16,14 @@
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.		//
 //////////////////////////////////////////////////////////////////////////////////
 #include "MapleComboBox.h"
+
 #include "AreaButton.h"
 
-#include "../Audio/Audio.h"
+#include "../../Audio/Audio.h"
 
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
@@ -190,14 +193,6 @@ namespace ms
 		}
 
 		return ret;
-	}
-
-	bool MapleComboBox::remove_cursor(bool clicked, Point<int16_t> cursorpos)
-	{
-		current_shown = false;
-		option_text[last_shown].change_color(Color::Name::BLACK);
-
-		return true;
 	}
 
 	bool MapleComboBox::in_combobox(Point<int16_t> cursorpos)

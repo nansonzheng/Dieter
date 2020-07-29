@@ -16,32 +16,32 @@
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.		//
 //////////////////////////////////////////////////////////////////////////////////
 #include "UIItemInventory.h"
+
 #include "UINotice.h"
 
 #include "../UI.h"
 
 #include "../Components/MapleButton.h"
-#include "../Components/TwoSpriteButton.h"
-#include "../Data/ItemData.h"
-#include "../Audio/Audio.h"
-#include "../Character/Player.h"
-#include "../Gameplay/Stage.h"
-#include "../Data/EquipData.h"
+#include "../UITypes/UIKeyConfig.h"
 
-#include "../Net/Packets/InventoryPackets.h"
+#include "../../Data/EquipData.h"
+#include "../../Gameplay/Stage.h"
 
+#include "../../Net/Packets/InventoryPackets.h"
+
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
-	UIItemInventory::UIItemInventory(const Inventory& invent) : UIDragElement<PosINV>(Point<int16_t>(0, 0)), inventory(invent), ignore_tooltip(false), tab(InventoryType::Id::EQUIP), sort_enabled(false)
+	UIItemInventory::UIItemInventory(const Inventory& invent) : UIDragElement<PosINV>(), inventory(invent), ignore_tooltip(false), tab(InventoryType::Id::EQUIP), sort_enabled(false)
 	{
 		nl::node Item = nl::nx::ui["UIWindow2.img"]["Item"];
 
-		// TODO: Change these to production
-		backgrnd = Item["backgrnd"];
+		backgrnd = Item["productionBackgrnd"];
 		backgrnd2 = Item["productionBackgrnd2"];
-		backgrnd3 = Item["backgrnd3"];
+		backgrnd3 = Item["productionBackgrnd3"];
 
 		full_backgrnd = Item["FullBackgrnd"];
 		full_backgrnd2 = Item["FullBackgrnd2"];
@@ -61,7 +61,7 @@ namespace ms
 		nl::node taben = Tab["enabled"];
 		nl::node tabdis = Tab["disabled"];
 
-		nl::node close = nl::nx::ui["Basic.img"]["BtClose"];
+		nl::node close = nl::nx::ui["Basic.img"]["BtClose3"];
 		buttons[Buttons::BT_CLOSE] = std::make_unique<MapleButton>(close);
 
 		buttons[Buttons::BT_TAB_EQUIP] = std::make_unique<TwoSpriteButton>(tabdis["0"], taben["0"]);
@@ -117,7 +117,7 @@ namespace ms
 		slotrange[InventoryType::Id::CASH] = { 1, 24 };
 
 		slider = Slider(
-			Slider::Type::DEFAULT, Range<int16_t>(50, 245), 152, 6, 1 + inventory.get_slotmax(tab) / COLUMNS,
+			Slider::Type::DEFAULT_SILVER, Range<int16_t>(50, 245), 152, 6, 1 + inventory.get_slotmax(tab) / COLUMNS,
 			[&](bool upwards)
 			{
 				int16_t shift = upwards ? -COLUMNS : COLUMNS;
@@ -232,10 +232,10 @@ namespace ms
 			const bool untradable = ItemData::get(item_id).is_untradable();
 			const bool cashitem = ItemData::get(item_id).is_cashitem();
 			const Texture& texture = ItemData::get(item_id).get_icon(false);
-			Equipslot::Id eqslot = inventory.find_equipslot(item_id);
+			EquipSlot::Id eqslot = inventory.find_equipslot(item_id);
 
 			icons[slot] = std::make_unique<Icon>(
-				std::make_unique<ItemIcon>(*this, tab, eqslot, slot, count, untradable, cashitem),
+				std::make_unique<ItemIcon>(*this, tab, eqslot, slot, item_id, count, untradable, cashitem),
 				texture, count
 				);
 		}
@@ -262,58 +262,83 @@ namespace ms
 
 		switch (buttonid)
 		{
-		case Buttons::BT_CLOSE:
-			toggle_active();
-			return Button::State::NORMAL;
-		case Buttons::BT_TAB_EQUIP:
-			tab = InventoryType::Id::EQUIP;
-			break;
-		case Buttons::BT_TAB_USE:
-			tab = InventoryType::Id::USE;
-			break;
-		case Buttons::BT_TAB_SETUP:
-			tab = InventoryType::Id::SETUP;
-			break;
-		case Buttons::BT_TAB_ETC:
-			tab = InventoryType::Id::ETC;
-			break;
-		case Buttons::BT_TAB_CASH:
-			tab = InventoryType::Id::CASH;
-			break;
-		case Buttons::BT_GATHER:
-		case Buttons::BT_GATHER_SM:
-			GatherItemsPacket(tab).dispatch();
-			break;
-		case Buttons::BT_SORT:
-		case Buttons::BT_SORT_SM:
-			SortItemsPacket(tab).dispatch();
-			break;
-		case Buttons::BT_FULL:
-		case Buttons::BT_FULL_SM:
-			set_full(true);
-			return Button::State::NORMAL;
-		case Buttons::BT_SMALL:
-		case Buttons::BT_SMALL_SM:
-			set_full(false);
-			return Button::State::NORMAL;
-		case Buttons::BT_COIN:
-		case Buttons::BT_COIN_SM:
-		case Buttons::BT_POINT:
-		case Buttons::BT_POINT_SM:
-		case Buttons::BT_POT:
-		case Buttons::BT_POT_SM:
-		case Buttons::BT_UPGRADE:
-		case Buttons::BT_UPGRADE_SM:
-		case Buttons::BT_APPRAISE:
-		case Buttons::BT_APPRAISE_SM:
-		case Buttons::BT_EXTRACT:
-		case Buttons::BT_EXTRACT_SM:
-		case Buttons::BT_DISASSEMBLE:
-		case Buttons::BT_DISASSEMBLE_SM:
-		case Buttons::BT_TOAD:
-		case Buttons::BT_TOAD_SM:
-		case Buttons::BT_CASHSHOP:
-			return Button::State::NORMAL;
+			case Buttons::BT_CLOSE:
+			{
+				toggle_active();
+
+				return Button::State::NORMAL;
+			}
+			case Buttons::BT_TAB_EQUIP:
+			{
+				tab = InventoryType::Id::EQUIP;
+				break;
+			}
+			case Buttons::BT_TAB_USE:
+			{
+				tab = InventoryType::Id::USE;
+				break;
+			}
+			case Buttons::BT_TAB_SETUP:
+			{
+				tab = InventoryType::Id::SETUP;
+				break;
+			}
+			case Buttons::BT_TAB_ETC:
+			{
+				tab = InventoryType::Id::ETC;
+				break;
+			}
+			case Buttons::BT_TAB_CASH:
+			{
+				tab = InventoryType::Id::CASH;
+				break;
+			}
+			case Buttons::BT_GATHER:
+			case Buttons::BT_GATHER_SM:
+			{
+				GatherItemsPacket(tab).dispatch();
+				break;
+			}
+			case Buttons::BT_SORT:
+			case Buttons::BT_SORT_SM:
+			{
+				SortItemsPacket(tab).dispatch();
+				break;
+			}
+			case Buttons::BT_FULL:
+			case Buttons::BT_FULL_SM:
+			{
+				set_full(true);
+
+				return Button::State::NORMAL;
+			}
+			case Buttons::BT_SMALL:
+			case Buttons::BT_SMALL_SM:
+			{
+				set_full(false);
+
+				return Button::State::NORMAL;
+			}
+			case Buttons::BT_COIN:
+			case Buttons::BT_COIN_SM:
+			case Buttons::BT_POINT:
+			case Buttons::BT_POINT_SM:
+			case Buttons::BT_POT:
+			case Buttons::BT_POT_SM:
+			case Buttons::BT_UPGRADE:
+			case Buttons::BT_UPGRADE_SM:
+			case Buttons::BT_APPRAISE:
+			case Buttons::BT_APPRAISE_SM:
+			case Buttons::BT_EXTRACT:
+			case Buttons::BT_EXTRACT_SM:
+			case Buttons::BT_DISASSEMBLE:
+			case Buttons::BT_DISASSEMBLE_SM:
+			case Buttons::BT_TOAD:
+			case Buttons::BT_TOAD_SM:
+			case Buttons::BT_CASHSHOP:
+			{
+				return Button::State::NORMAL;
+			}
 		}
 
 		if (tab != oldtab)
@@ -341,14 +366,18 @@ namespace ms
 			{
 				switch (tab)
 				{
-				case InventoryType::Id::EQUIP:
-					if (can_wear_equip(slot))
-						EquipItemPacket(slot, inventory.find_equipslot(item_id)).dispatch();
+					case InventoryType::Id::EQUIP:
+					{
+						if (can_wear_equip(slot))
+							EquipItemPacket(slot, inventory.find_equipslot(item_id)).dispatch();
 
-					break;
-				case InventoryType::Id::USE:
-					UseItemPacket(slot, item_id).dispatch();
-					break;
+						break;
+					}
+					case InventoryType::Id::USE:
+					{
+						UseItemPacket(slot, item_id).dispatch();
+						break;
+					}
 				}
 			}
 		}
@@ -361,7 +390,7 @@ namespace ms
 		if (slot > 0)
 		{
 			int32_t item_id = inventory.get_item_id(tab, slot);
-			Equipslot::Id eqslot;
+			EquipSlot::Id eqslot;
 			bool equip;
 
 			if (item_id && tab == InventoryType::Id::EQUIP)
@@ -371,7 +400,7 @@ namespace ms
 			}
 			else
 			{
-				eqslot = Equipslot::Id::NONE;
+				eqslot = EquipSlot::Id::NONE;
 				equip = false;
 			}
 
@@ -461,26 +490,31 @@ namespace ms
 
 				switch (tab)
 				{
-				case InventoryType::Id::EQUIP:
-					newtab = InventoryType::Id::USE;
-					break;
-				case InventoryType::Id::USE:
-					newtab = InventoryType::Id::ETC;
-					break;
-				case InventoryType::Id::ETC:
-					newtab = InventoryType::Id::SETUP;
-					break;
-				case InventoryType::Id::SETUP:
-					newtab = InventoryType::Id::CASH;
-					break;
-				case InventoryType::Id::CASH:
-					newtab = InventoryType::Id::EQUIP;
-					break;
+					case InventoryType::Id::EQUIP:
+						newtab = InventoryType::Id::USE;
+						break;
+					case InventoryType::Id::USE:
+						newtab = InventoryType::Id::ETC;
+						break;
+					case InventoryType::Id::ETC:
+						newtab = InventoryType::Id::SETUP;
+						break;
+					case InventoryType::Id::SETUP:
+						newtab = InventoryType::Id::CASH;
+						break;
+					case InventoryType::Id::CASH:
+						newtab = InventoryType::Id::EQUIP;
+						break;
 				}
 
 				button_pressed(button_by_tab(newtab));
 			}
 		}
+	}
+
+	UIElement::Type UIItemInventory::get_type() const
+	{
+		return TYPE;
 	}
 
 	void UIItemInventory::modify(InventoryType::Id type, int16_t slot, int8_t mode, int16_t arg)
@@ -492,45 +526,58 @@ namespace ms
 		{
 			switch (mode)
 			{
-			case Inventory::Modification::ADD:
-				update_slot(slot);
-				newtab = type;
-				newslot = slot;
-				break;
-			case Inventory::Modification::CHANGECOUNT:
-			case Inventory::Modification::ADDCOUNT:
-				if (auto icon = get_icon(slot))
-					icon->set_count(arg);
-
-				break;
-			case Inventory::Modification::SWAP:
-				if (arg != slot)
+				case Inventory::Modification::ADD:
 				{
 					update_slot(slot);
-					update_slot(arg);
-				}
 
-				break;
-			case Inventory::Modification::REMOVE:
-				update_slot(slot);
-				break;
+					newtab = type;
+					newslot = slot;
+					break;
+				}
+				case Inventory::Modification::CHANGECOUNT:
+				case Inventory::Modification::ADDCOUNT:
+				{
+					if (auto icon = get_icon(slot))
+						icon->set_count(arg);
+
+					break;
+				}
+				case Inventory::Modification::SWAP:
+				{
+					if (arg != slot)
+					{
+						update_slot(slot);
+						update_slot(arg);
+					}
+
+					break;
+				}
+				case Inventory::Modification::REMOVE:
+				{
+					update_slot(slot);
+					break;
+				}
 			}
 		}
 
 		switch (mode)
 		{
-		case Inventory::Modification::ADD:
-		case Inventory::Modification::ADDCOUNT:
-			newtab = type;
-			newslot = slot;
-			break;
-		case Inventory::Modification::CHANGECOUNT:
-		case Inventory::Modification::SWAP:
-		case Inventory::Modification::REMOVE:
-			if (newslot == slot && newtab == type)
-				clear_new();
+			case Inventory::Modification::ADD:
+			case Inventory::Modification::ADDCOUNT:
+			{
+				newtab = type;
+				newslot = slot;
+				break;
+			}
+			case Inventory::Modification::CHANGECOUNT:
+			case Inventory::Modification::SWAP:
+			case Inventory::Modification::REMOVE:
+			{
+				if (newslot == slot && newtab == type)
+					clear_new();
 
-			break;
+				break;
+			}
 		}
 	}
 
@@ -596,12 +643,11 @@ namespace ms
 		}
 	}
 
-	bool UIItemInventory::remove_cursor(bool clicked, Point<int16_t> cursorpos)
+	void UIItemInventory::remove_cursor()
 	{
-		if (UIDragElement::remove_cursor(clicked, cursorpos))
-			return true;
+		UIDragElement::remove_cursor();
 
-		return slider.remove_cursor(clicked);
+		slider.remove_cursor();
 	}
 
 	void UIItemInventory::show_item(int16_t slot)
@@ -646,7 +692,7 @@ namespace ms
 
 		if (alerted)
 		{
-			UI::get().emplace<UIOk>("You cannot complete this action right now.\\nEvade the attack and try again.", []() {});
+			UI::get().emplace<UIOk>("You cannot complete this action right now.\\nEvade the attack and try again.", [](bool) {});
 			return false;
 		}
 
@@ -659,19 +705,28 @@ namespace ms
 
 		switch (reqGender)
 		{
-		case 0: // Male
-			if (female)
-				return false;
+			// Male
+			case 0:
+			{
+				if (female)
+					return false;
 
-			break;
-		case 1: // Female
-			if (!female)
-				return false;
+				break;
+			}
+			// Female
+			case 1:
+			{
+				if (!female)
+					return false;
 
-			break;
-		case 2: // Unisex
-		default:
-			break;
+				break;
+			}
+			// Unisex
+			case 2:
+			default:
+			{
+				break;
+			}
 		}
 
 		const std::string jobname = stats.get_jobname();
@@ -679,39 +734,39 @@ namespace ms
 		if (jobname == "GM" || jobname == "SuperGM")
 			return true;
 
-		int16_t reqJOB = equipdata.get_reqstat(Maplestat::Id::JOB);
+		int16_t reqJOB = equipdata.get_reqstat(MapleStat::Id::JOB);
 
 		if (!stats.get_job().is_sub_job(reqJOB))
 		{
-			UI::get().emplace<UIOk>("Your current job\\ncannot equip the selected item.", []() {});
+			UI::get().emplace<UIOk>("Your current job\\ncannot equip the selected item.", [](bool) {});
 			return false;
 		}
 
-		int16_t reqLevel = equipdata.get_reqstat(Maplestat::Id::LEVEL);
-		int16_t reqDEX = equipdata.get_reqstat(Maplestat::Id::DEX);
-		int16_t reqSTR = equipdata.get_reqstat(Maplestat::Id::STR);
-		int16_t reqLUK = equipdata.get_reqstat(Maplestat::Id::LUK);
-		int16_t reqINT = equipdata.get_reqstat(Maplestat::Id::INT);
-		int16_t reqFAME = equipdata.get_reqstat(Maplestat::Id::FAME);
+		int16_t reqLevel = equipdata.get_reqstat(MapleStat::Id::LEVEL);
+		int16_t reqDEX = equipdata.get_reqstat(MapleStat::Id::DEX);
+		int16_t reqSTR = equipdata.get_reqstat(MapleStat::Id::STR);
+		int16_t reqLUK = equipdata.get_reqstat(MapleStat::Id::LUK);
+		int16_t reqINT = equipdata.get_reqstat(MapleStat::Id::INT);
+		int16_t reqFAME = equipdata.get_reqstat(MapleStat::Id::FAME);
 
 		int8_t i = 0;
 
-		if (reqLevel > stats.get_stat(Maplestat::Id::LEVEL))
+		if (reqLevel > stats.get_stat(MapleStat::Id::LEVEL))
 			i++;
-		else if (reqDEX > stats.get_total(Equipstat::Id::DEX))
+		else if (reqDEX > stats.get_total(EquipStat::Id::DEX))
 			i++;
-		else if (reqSTR > stats.get_total(Equipstat::Id::STR))
+		else if (reqSTR > stats.get_total(EquipStat::Id::STR))
 			i++;
-		else if (reqLUK > stats.get_total(Equipstat::Id::LUK))
+		else if (reqLUK > stats.get_total(EquipStat::Id::LUK))
 			i++;
-		else if (reqINT > stats.get_total(Equipstat::Id::INT))
+		else if (reqINT > stats.get_total(EquipStat::Id::INT))
 			i++;
 		else if (reqFAME > stats.get_honor())
 			i++;
 
 		if (i > 0)
 		{
-			UI::get().emplace<UIOk>("Your stats are too low to equip this item\\nor you do not meet the job requirement.", []() {});
+			UI::get().emplace<UIOk>("Your stats are too low to equip this item\\nor you do not meet the job requirement.", [](bool) {});
 			return false;
 		}
 
@@ -760,12 +815,12 @@ namespace ms
 
 		switch (tb)
 		{
-		case InventoryType::Id::ETC:
-			fixed_tab = 3;
-			break;
-		case InventoryType::Id::SETUP:
-			fixed_tab = 4;
-			break;
+			case InventoryType::Id::ETC:
+				fixed_tab = 3;
+				break;
+			case InventoryType::Id::SETUP:
+				fixed_tab = 4;
+				break;
 		}
 
 		return Point<int16_t>(10 + ((fixed_tab - 1) * 31), 29);
@@ -775,16 +830,16 @@ namespace ms
 	{
 		switch (tb)
 		{
-		case InventoryType::Id::EQUIP:
-			return Buttons::BT_TAB_EQUIP;
-		case InventoryType::Id::USE:
-			return Buttons::BT_TAB_USE;
-		case InventoryType::Id::SETUP:
-			return Buttons::BT_TAB_SETUP;
-		case InventoryType::Id::ETC:
-			return Buttons::BT_TAB_ETC;
-		default:
-			return Buttons::BT_TAB_CASH;
+			case InventoryType::Id::EQUIP:
+				return Buttons::BT_TAB_EQUIP;
+			case InventoryType::Id::USE:
+				return Buttons::BT_TAB_USE;
+			case InventoryType::Id::SETUP:
+				return Buttons::BT_TAB_SETUP;
+			case InventoryType::Id::ETC:
+				return Buttons::BT_TAB_ETC;
+			default:
+				return Buttons::BT_TAB_CASH;
 		}
 	}
 
@@ -823,8 +878,8 @@ namespace ms
 
 		dragarea = Point<int16_t>(dimension.x(), 20);
 
-		int16_t adj_x = full_enabled ? 14 : 16;
-		buttons[Buttons::BT_CLOSE]->set_position(Point<int16_t>(dimension.x() - adj_x, 12));
+		int16_t adj_x = full_enabled ? 20 : 22;
+		buttons[Buttons::BT_CLOSE]->set_position(Point<int16_t>(dimension.x() - adj_x, 6));
 
 		buttons[Buttons::BT_COIN]->set_active(!enabled);
 		buttons[Buttons::BT_POINT]->set_active(!enabled);
@@ -855,11 +910,17 @@ namespace ms
 		count = c;
 	}
 
-	UIItemInventory::ItemIcon::ItemIcon(const UIItemInventory& parent, InventoryType::Id st, Equipslot::Id eqs, int16_t s, int16_t c, bool u, bool cash) : parent(parent)
+	Icon::IconType UIItemInventory::ItemIcon::get_type()
+	{
+		return Icon::IconType::ITEM;
+	}
+
+	UIItemInventory::ItemIcon::ItemIcon(const UIItemInventory& parent, InventoryType::Id st, EquipSlot::Id eqs, int16_t s, int32_t iid, int16_t c, bool u, bool cash) : parent(parent)
 	{
 		sourcetab = st;
 		eqsource = eqs;
 		source = s;
+		item_id = iid;
 		count = c;
 		untradable = u;
 		cashitem = cash;
@@ -873,7 +934,7 @@ namespace ms
 
 		if (cashitem)
 		{
-			UI::get().emplace<UIOk>(cashmessage, []() {});
+			UI::get().emplace<UIOk>(cashmessage, [](bool) {});
 		}
 		else
 		{
@@ -920,25 +981,28 @@ namespace ms
 		}
 	}
 
-	void UIItemInventory::ItemIcon::drop_on_equips(Equipslot::Id eqslot) const
+	void UIItemInventory::ItemIcon::drop_on_equips(EquipSlot::Id eqslot) const
 	{
 		switch (sourcetab)
 		{
-		case InventoryType::Id::EQUIP:
-			if (eqsource == eqslot)
-				if (parent.can_wear_equip(source))
-					EquipItemPacket(source, eqslot).dispatch();
+			case InventoryType::Id::EQUIP:
+			{
+				if (eqsource == eqslot)
+					if (parent.can_wear_equip(source))
+						EquipItemPacket(source, eqslot).dispatch();
 
-			Sound(Sound::Name::DRAGEND).play();
-
-			break;
-		case InventoryType::Id::USE:
-			ScrollEquipPacket(source, eqslot).dispatch();
-			break;
+				Sound(Sound::Name::DRAGEND).play();
+				break;
+			}
+			case InventoryType::Id::USE:
+			{
+				ScrollEquipPacket(source, eqslot).dispatch();
+				break;
+			}
 		}
 	}
 
-	bool UIItemInventory::ItemIcon::drop_on_items(InventoryType::Id tab, Equipslot::Id, int16_t slot, bool) const
+	bool UIItemInventory::ItemIcon::drop_on_items(InventoryType::Id tab, EquipSlot::Id, int16_t slot, bool) const
 	{
 		if (tab != sourcetab || slot == source)
 			return true;
@@ -946,5 +1010,19 @@ namespace ms
 		MoveItemPacket(tab, source, slot, 1).dispatch();
 
 		return true;
+	}
+
+	void UIItemInventory::ItemIcon::drop_on_bindings(Point<int16_t> cursorposition, bool remove) const
+	{
+		if (sourcetab == InventoryType::Id::USE || sourcetab == InventoryType::Id::SETUP)
+		{
+			auto keyconfig = UI::get().get_element<UIKeyConfig>();
+			Keyboard::Mapping mapping = Keyboard::Mapping(KeyType::ITEM, item_id);
+
+			if (remove)
+				keyconfig->unstage_mapping(mapping);
+			else
+				keyconfig->stage_mapping(cursorposition, mapping);
+		}
 	}
 }

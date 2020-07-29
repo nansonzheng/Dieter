@@ -18,12 +18,8 @@
 #pragma once
 
 #include "../UIElement.h"
-#include "../Constants.h"
 
 #include "../Components/IconCover.h"
-#include "../Graphics/Texture.h"
-
-#include <unordered_map>
 
 namespace ms
 {
@@ -58,7 +54,11 @@ namespace ms
 
 		void draw(float inter) const override;
 		void update() override;
+		void update_screen(int16_t new_width, int16_t new_height) override;
+
 		Cursor::State send_cursor(bool pressed, Point<int16_t> position) override;
+
+		UIElement::Type get_type() const override;
 
 		void add_buff(int32_t buffid, int32_t duration);
 

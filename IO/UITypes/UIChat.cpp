@@ -21,11 +21,13 @@
 
 #include "../Components/MapleButton.h"
 
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
-	UIChat::UIChat() : UIDragElement<PosMAPLECHAT>(Point<int16_t>())
+	UIChat::UIChat() : UIDragElement<PosMAPLECHAT>()
 	{
 		show_weekly = Configuration::get().get_show_weekly();
 
@@ -78,15 +80,15 @@ namespace ms
 		name_right.draw(position + origin_right + name_shift);
 	}
 
-	void UIChat::update()
-	{
-		UIElement::update();
-	}
-
 	void UIChat::send_key(int32_t keycode, bool pressed, bool escape)
 	{
 		if (pressed && escape)
 			close();
+	}
+
+	UIElement::Type UIChat::get_type() const
+	{
+		return TYPE;
 	}
 
 	Button::State UIChat::button_pressed(uint16_t buttonid)
@@ -111,10 +113,10 @@ namespace ms
 
 	void UIChat::close()
 	{
-		active = false;
+		deactivate();
 	}
 
-	UIRank::UIRank() : UIDragElement<PosMAPLECHAT>(Point<int16_t>())
+	UIRank::UIRank() : UIDragElement<PosMAPLECHAT>()
 	{
 		Configuration::get().set_show_weekly(false);
 
@@ -162,15 +164,15 @@ namespace ms
 		name_right.draw(position + origin_right + name_shift);
 	}
 
-	void UIRank::update()
-	{
-		UIElement::update();
-	}
-
 	void UIRank::send_key(int32_t keycode, bool pressed, bool escape)
 	{
 		if (pressed && escape)
 			close();
+	}
+
+	UIElement::Type UIRank::get_type() const
+	{
+		return TYPE;
 	}
 
 	Button::State UIRank::button_pressed(uint16_t buttonid)
@@ -189,6 +191,6 @@ namespace ms
 
 	void UIRank::close()
 	{
-		active = false;
+		deactivate();
 	}
 }

@@ -17,10 +17,11 @@
 //////////////////////////////////////////////////////////////////////////////////
 #include "Face.h"
 
-#include "../Console.h"
+#include <iostream>
 
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
-#include <nlnx/node.hpp>
+#endif
 
 namespace ms
 {
@@ -31,7 +32,7 @@ namespace ms
 		if (action < Expression::Id::LENGTH)
 			return static_cast<Id>(action);
 
-		Console::get().print("Unhandled expression id: " + std::to_string(action));
+		std::cout << "Unknown Expression::Id action: [" << action << "]" << std::endl;
 
 		return Expression::Id::DEFAULT;
 	}

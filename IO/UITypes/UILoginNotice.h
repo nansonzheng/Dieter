@@ -30,9 +30,9 @@ namespace ms
 
 		UIKeyConfirm(bool alternate, std::function<void()> oh, bool login);
 
-		void draw(float alpha) const override;
-
 		void send_key(int32_t keycode, bool pressed, bool escape) override;
+
+		UIElement::Type get_type() const override;
 
 	protected:
 		Button::State button_pressed(uint16_t buttonid) override;
@@ -58,9 +58,9 @@ namespace ms
 
 		UIKeySelect(std::function<void(bool)> okhandler, bool login);
 
-		void draw(float alpha) const override;
-
 		void send_key(int32_t keycode, bool pressed, bool escape) override;
+
+		UIElement::Type get_type() const override;
 
 	protected:
 		Button::State button_pressed(uint16_t buttonid) override;
@@ -68,6 +68,7 @@ namespace ms
 	private:
 		enum Buttons
 		{
+			CLOSE,
 			TYPEA,
 			TYPEB
 		};
@@ -83,13 +84,12 @@ namespace ms
 		static constexpr bool FOCUSED = false;
 		static constexpr bool TOGGLED = false;
 
-		UIClassConfirm(uint8_t selected_class, bool unavailable, std::function<void()> okhandler);
+		UIClassConfirm(uint16_t selected_class, bool unavailable, std::function<void()> okhandler);
 
-		void draw(float inter) const override;
-
-		bool remove_cursor(bool clicked, Point<int16_t> cursorpos) override;
 		Cursor::State send_cursor(bool clicked, Point<int16_t> cursorpos) override;
 		void send_key(int32_t keycode, bool pressed, bool escape) override;
+
+		UIElement::Type get_type() const override;
 
 	protected:
 		Button::State button_pressed(uint16_t buttonid) override;
@@ -99,36 +99,6 @@ namespace ms
 		{
 			OK,
 			CANCEL
-		};
-
-		enum Classes : uint8_t
-		{
-			RESISTANCE,
-			EXPLORER,
-			CYGNUSKNIGHTS,
-			ARAN,
-			EVAN,
-			MERCEDES,
-			DEMON,
-			PHANTOM,
-			DUALBLADE,
-			MIHILE,
-			LUMINOUS,
-			KAISER,
-			ANGELICBUSTER,
-			CANNONEER,
-			XENON,
-			ZERO,
-			SHADE,
-			JETT,
-			HAYATO,
-			KANNA,
-			CHASE,
-			PINKBEAN,
-			KINESIS,
-			CADENA,
-			ILLIUM,
-			ARK,
 		};
 
 		std::function<void()> okhandler;
@@ -143,9 +113,9 @@ namespace ms
 
 		UIQuitConfirm();
 
-		void draw(float alpha) const override;
-
 		void send_key(int32_t keycode, bool pressed, bool escape) override;
+
+		UIElement::Type get_type() const override;
 
 	protected:
 		Button::State button_pressed(uint16_t buttonid) override;
@@ -156,9 +126,6 @@ namespace ms
 			BT_OK,
 			BT_CANCEL
 		};
-
-		Texture background;
-		Sprite text;
 	};
 
 	class UILoginNotice : public UIElement
@@ -298,9 +265,9 @@ namespace ms
 		UILoginNotice(uint16_t message, std::function<void()> okhandler);
 		UILoginNotice(uint16_t message);
 
-		void draw(float alpha) const override;
-
 		void send_key(int32_t keycode, bool pressed, bool escape) override;
+
+		UIElement::Type get_type() const override;
 
 	protected:
 		Button::State button_pressed(uint16_t buttonid) override;

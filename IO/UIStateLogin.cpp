@@ -17,11 +17,11 @@
 //////////////////////////////////////////////////////////////////////////////////
 #include "UIStateLogin.h"
 
-#include "UITypes/UILogin.h"
-#include "UITypes/UILogo.h"
-#include "UITypes/UILoginNotice.h"
-#include "UITypes/UIRegion.h"
 #include "UITypes/UICharSelect.h"
+#include "UITypes/UILogin.h"
+#include "UITypes/UILoginNotice.h"
+#include "UITypes/UILogo.h"
+#include "UITypes/UIRegion.h"
 
 #include "../Configuration.h"
 
@@ -29,7 +29,8 @@ namespace ms
 {
 	UIStateLogin::UIStateLogin()
 	{
-		focused = UIElement::NONE;
+		focused = UIElement::Type::NONE;
+
 		bool start_shown = Configuration::get().get_start_shown();
 
 		if (!start_shown)
@@ -69,11 +70,9 @@ namespace ms
 			charselect->doubleclick(pos);
 	}
 
-	void UIStateLogin::rightclick(Point<int16_t>) {}
-
 	void UIStateLogin::send_key(KeyType::Id type, int32_t action, bool pressed, bool escape)
 	{
-		if (UIElement * focusedelement = get(focused))
+		if (UIElement* focusedelement = get(focused))
 		{
 			if (focusedelement->is_active())
 			{
@@ -81,62 +80,46 @@ namespace ms
 			}
 			else
 			{
-				focused = UIElement::NONE;
+				focused = UIElement::Type::NONE;
 
 				return;
 			}
 		}
 	}
 
-	Cursor::State UIStateLogin::send_cursor(Cursor::State mst, Point<int16_t> pos)
+	Cursor::State UIStateLogin::send_cursor(Cursor::State cursorstate, Point<int16_t> cursorpos)
 	{
-		if (UIElement * focusedelement = get(focused))
+		bool clicked = cursorstate == Cursor::State::CLICKING || cursorstate == Cursor::State::VSCROLLIDLE;
+
+		if (auto focusedelement = get(focused))
 		{
 			if (focusedelement->is_active())
 			{
-				return focusedelement->send_cursor(mst == Cursor::CLICKING, pos);
+				remove_cursor(focusedelement->get_type());
+
+				return focusedelement->send_cursor(clicked, cursorpos);
 			}
 			else
 			{
-				focused = UIElement::NONE;
+				focused = UIElement::Type::NONE;
 
-				return mst;
+				return cursorstate;
 			}
 		}
 		else
 		{
-			UIElement* front = nullptr;
-			UIElement::Type fronttype = UIElement::NONE;
-
-			for (auto iter : elements)
+			if (auto front = get_front())
 			{
-				auto& element = iter.second;
+				remove_cursor(front->get_type());
 
-				if (element && element->is_active())
-				{
-					if (element->is_in_range(pos))
-					{
-						if (front)
-							element->remove_cursor(false, pos);
-
-						front = element.get();
-						fronttype = iter.first;
-					}
-					else
-					{
-						element->remove_cursor(false, pos);
-					}
-				}
+				return front->send_cursor(clicked, cursorpos);
 			}
-
-			if (front)
-				return front->send_cursor(mst == Cursor::CLICKING, pos);
 			else
-				return Cursor::IDLE;
+			{
+				return Cursor::State::IDLE;
+			}
 		}
 	}
-
-	void UIStateLogin::send_scroll(double) {}
 
 	void UIStateLogin::send_close()
 	{
@@ -150,8 +133,6 @@ namespace ms
 			UI::get().emplace<UIQuitConfirm>();
 	}
 
-	void UIStateLogin::drag_icon(Icon*) {}
-
 	void UIStateLogin::clear_tooltip(Tooltip::Parent parent)
 	{
 		if (parent == tooltipparent)
@@ -161,10 +142,6 @@ namespace ms
 			tooltipparent = Tooltip::Parent::NONE;
 		}
 	}
-
-	void UIStateLogin::show_equip(Tooltip::Parent, int16_t) {}
-	void UIStateLogin::show_item(Tooltip::Parent, int32_t) {}
-	void UIStateLogin::show_skill(Tooltip::Parent, int32_t, int32_t, int32_t, int64_t) {}
 
 	void UIStateLogin::show_text(Tooltip::Parent parent, std::string text)
 	{
@@ -201,9 +178,9 @@ namespace ms
 	void UIStateLogin::remove(UIElement::Type type)
 	{
 		if (focused == type)
-			focused = UIElement::NONE;
+			focused = UIElement::Type::NONE;
 
-		if (auto & element = elements[type])
+		if (auto& element = elements[type])
 		{
 			element->deactivate();
 			element.release();
@@ -213,6 +190,21 @@ namespace ms
 	UIElement* UIStateLogin::get(UIElement::Type type)
 	{
 		return elements[type].get();
+	}
+
+	UIElement* UIStateLogin::get_front()
+	{
+		UIElement* front = nullptr;
+
+		for (auto iter : elements)
+		{
+			auto& element = iter.second;
+
+			if (element && element->is_active())
+				front = element.get();
+		}
+
+		return front;
 	}
 
 	UIElement* UIStateLogin::get_front(std::list<UIElement::Type> types)
@@ -247,18 +239,14 @@ namespace ms
 		return nullptr;
 	}
 
-	int64_t UIStateLogin::get_uptime()
+	void UIStateLogin::remove_cursor(UIElement::Type type)
 	{
-		return 0;
-	}
+		for (auto iter : elements)
+		{
+			auto& element = iter.second;
 
-	uint16_t UIStateLogin::get_uplevel()
-	{
-		return 0;
-	}
-
-	int64_t UIStateLogin::get_upexp()
-	{
-		return 0;
+			if (element && element->is_active() && element->get_type() != type)
+				element->remove_cursor();
+		}
 	}
 }

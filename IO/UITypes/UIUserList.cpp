@@ -17,22 +17,23 @@
 //////////////////////////////////////////////////////////////////////////////////
 #include "UIUserList.h"
 
-#include "../IO/Components/MapleButton.h"
-#include "../IO/Components/TwoSpriteButton.h"
+#include "../../IO/Components/MapleButton.h"
 
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
 	UIUserList::UIUserList(uint16_t t) : UIDragElement<PosUSERLIST>(Point<int16_t>(260, 20)), tab(t)
 	{
-		nl::node close = nl::nx::ui["Basic.img"]["BtClose"];
+		nl::node close = nl::nx::ui["Basic.img"]["BtClose3"];
 		UserList = nl::nx::ui["UIWindow2.img"]["UserList"];
 		nl::node Main = UserList["Main"];
 
 		sprites.emplace_back(Main["backgrnd"]);
 
-		buttons[Buttons::BT_CLOSE] = std::make_unique<MapleButton>(close, Point<int16_t>(250, 13));
+		buttons[Buttons::BT_CLOSE] = std::make_unique<MapleButton>(close, Point<int16_t>(244, 7));
 
 		nl::node taben = Main["Tab"]["enabled"];
 		nl::node tabdis = Main["Tab"]["disabled"];
@@ -83,7 +84,7 @@ namespace ms
 		int16_t party_height = party_y + 168;
 		int16_t party_unitrows = 6;
 		int16_t party_rowmax = 6;
-		party_slider = Slider(Slider::Type::DEFAULT, Range<int16_t>(party_y, party_height), party_x, party_unitrows, party_rowmax, [](bool) {});
+		party_slider = Slider(Slider::Type::DEFAULT_SILVER, Range<int16_t>(party_y, party_height), party_x, party_unitrows, party_rowmax, [](bool) {});
 
 		// Buddy Tab
 		nl::node Friend = Main["Friend"];
@@ -123,7 +124,7 @@ namespace ms
 		int16_t friends_height = friends_y + 148;
 		int16_t friends_unitrows = 6;
 		int16_t friends_rowmax = 6;
-		friends_slider = Slider(Slider::Type::DEFAULT, Range<int16_t>(friends_y, friends_height), friends_x, friends_unitrows, friends_rowmax, [](bool) {});
+		friends_slider = Slider(Slider::Type::DEFAULT_SILVER, Range<int16_t>(friends_y, friends_height), friends_x, friends_unitrows, friends_rowmax, [](bool) {});
 
 		// Boss tab
 		nl::node Boss = Main["Boss"];
@@ -154,22 +155,22 @@ namespace ms
 		buttons[Buttons::BT_BOSS_GO]->set_active(false);
 
 		// Blacklist tab
-		nl::node Blacklist = Main["Blacklist"];
+		nl::node BlackList = Main["BlackList"];
 
-		blacklist_title = Blacklist["base"];
+		blacklist_title = BlackList["base"];
 
-		for (size_t i = 0; i <= 3; i++)
+		for (size_t i = 0; i < 3; i++)
 			blacklist_grid[i] = UserList["Sheet6"][i];
 
 		blacklist_name = Text(Text::Font::A12M, Text::Alignment::LEFT, Color::Name::BLACK, "none", 0);
 
-		nl::node blacklist_taben = Blacklist["Tab"]["enabled"];
-		nl::node blacklist_tabdis = Blacklist["Tab"]["disabled"];
+		nl::node blacklist_taben = BlackList["Tab"]["enabled"];
+		nl::node blacklist_tabdis = BlackList["Tab"]["disabled"];
 
-		buttons[Buttons::BT_BLACKLIST_ADD] = std::make_unique<MapleButton>(Blacklist["BtAdd"]);
-		buttons[Buttons::BT_BLACKLIST_DELETE] = std::make_unique<MapleButton>(Blacklist["BtDelete"]);
-		buttons[Buttons::BT_TAB_BLACKLIST_INDIVIDUAL] = std::make_unique<MapleButton>(Blacklist["TapShowIndividual"]);
-		buttons[Buttons::BT_TAB_BLACKLIST_GUILD] = std::make_unique<MapleButton>(Blacklist["TapShowGuild"]);
+		buttons[Buttons::BT_BLACKLIST_ADD] = std::make_unique<MapleButton>(BlackList["BtAdd"]);
+		buttons[Buttons::BT_BLACKLIST_DELETE] = std::make_unique<MapleButton>(BlackList["BtDelete"]);
+		buttons[Buttons::BT_TAB_BLACKLIST_INDIVIDUAL] = std::make_unique<MapleButton>(BlackList["TapShowIndividual"]);
+		buttons[Buttons::BT_TAB_BLACKLIST_GUILD] = std::make_unique<MapleButton>(BlackList["TapShowGuild"]);
 		buttons[Buttons::BT_BLACKLIST_ADD]->set_active(false);
 		buttons[Buttons::BT_BLACKLIST_DELETE]->set_active(false);
 		buttons[Buttons::BT_TAB_BLACKLIST_INDIVIDUAL]->set_active(false);
@@ -178,7 +179,6 @@ namespace ms
 		change_tab(tab);
 
 		dimension = Point<int16_t>(276, 390);
-		active = true;
 	}
 
 	void UIUserList::draw(float alpha) const
@@ -252,7 +252,7 @@ namespace ms
 		{
 			if (escape)
 			{
-				active = false;
+				deactivate();
 			}
 			else if (keycode == KeyAction::Id::TAB)
 			{
@@ -268,33 +268,38 @@ namespace ms
 		}
 	}
 
+	UIElement::Type UIUserList::get_type() const
+	{
+		return TYPE;
+	}
+
 	Button::State UIUserList::button_pressed(uint16_t buttonid)
 	{
 		switch (buttonid)
 		{
-		case Buttons::BT_CLOSE:
-			active = false;
-			break;
-		case Buttons::BT_TAB_FRIEND:
-		case Buttons::BT_TAB_PARTY:
-		case Buttons::BT_TAB_BOSS:
-		case Buttons::BT_TAB_BLACKLIST:
-			change_tab(buttonid);
-			return Button::State::PRESSED;
-		case Buttons::BT_TAB_PARTY_MINE:
-		case Buttons::BT_TAB_PARTY_SEARCH:
-			change_party_tab(buttonid);
-			return Button::State::PRESSED;
-		case Buttons::BT_TAB_FRIEND_ALL:
-		case Buttons::BT_TAB_FRIEND_ONLINE:
-			change_friend_tab(buttonid);
-			return Button::State::PRESSED;
-		case Buttons::BT_TAB_BLACKLIST_INDIVIDUAL:
-		case Buttons::BT_TAB_BLACKLIST_GUILD:
-			change_blacklist_tab(buttonid);
-			return Button::State::PRESSED;
-		default:
-			return Button::State::NORMAL;
+			case Buttons::BT_CLOSE:
+				deactivate();
+				break;
+			case Buttons::BT_TAB_FRIEND:
+			case Buttons::BT_TAB_PARTY:
+			case Buttons::BT_TAB_BOSS:
+			case Buttons::BT_TAB_BLACKLIST:
+				change_tab(buttonid);
+				return Button::State::PRESSED;
+			case Buttons::BT_TAB_PARTY_MINE:
+			case Buttons::BT_TAB_PARTY_SEARCH:
+				change_party_tab(buttonid);
+				return Button::State::PRESSED;
+			case Buttons::BT_TAB_FRIEND_ALL:
+			case Buttons::BT_TAB_FRIEND_ONLINE:
+				change_friend_tab(buttonid);
+				return Button::State::PRESSED;
+			case Buttons::BT_TAB_BLACKLIST_INDIVIDUAL:
+			case Buttons::BT_TAB_BLACKLIST_GUILD:
+				change_blacklist_tab(buttonid);
+				return Button::State::PRESSED;
+			default:
+				return Button::State::NORMAL;
 		}
 
 		return Button::State::NORMAL;

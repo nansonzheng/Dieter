@@ -21,26 +21,26 @@
 
 #include "../Components/MapleButton.h"
 #include "../Components/MapleComboBox.h"
+#include "../UITypes/UILoginWait.h"
 
-#include "../IO/UITypes/UILoginwait.h"
-#include "../Net/Packets/LoginPackets.h"
+#include "../../Net/Packets/LoginPackets.h"
 
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
-	UIGender::UIGender(std::function<void()> oh) : okhandler(oh)
+	UIGender::UIGender(std::function<void()> oh) : UIElement(Point<int16_t>(0, 15), Point<int16_t>(0, 0)), okhandler(oh)
 	{
 		CUR_TIMESTEP = 0;
 
-		nl::node Login = nl::nx::ui["Login.img"];
-		nl::node Gender = Login["Gender"];
-		nl::node scroll = Gender["scroll"][0];
+		nl::node Gender = nl::nx::ui["Login.img"]["Gender"];
 
 		for (size_t i = 0; i < 3; i++)
-			gender_sprites[i] = scroll[i];
+			gender_sprites[i] = Gender["scroll"]["0"][i];
 
-		sprites.emplace_back(Gender["text"][0], Point<int16_t>(601, 326));
+		sprites.emplace_back(Gender["text"]["0"], Point<int16_t>(601, 326));
 
 		std::vector<std::string> options;
 		options.push_back("Male");
@@ -48,7 +48,7 @@ namespace ms
 
 		uint16_t default_option = 0;
 
-		buttons[Buttons::NO] = std::make_unique<MapleButton>(Login["BtCancel"], Point<int16_t>(650, 349)); // TODO: _inlink issue: Original: Gender["BtNo"]
+		buttons[Buttons::NO] = std::make_unique<MapleButton>(Gender["BtNo"], Point<int16_t>(650, 349));
 		buttons[Buttons::YES] = std::make_unique<MapleButton>(Gender["BtYes"], Point<int16_t>(578, 349));
 		buttons[Buttons::SELECT] = std::make_unique<MapleComboBox>(MapleComboBox::Type::DEFAULT, options, default_option, position, Point<int16_t>(510, 283), 65);
 
@@ -83,55 +83,52 @@ namespace ms
 			CUR_TIMESTEP += Constants::TIMESTEP;
 	}
 
-	bool UIGender::remove_cursor(bool clicked, Point<int16_t> cursorpos)
-	{
-		if (buttons[Buttons::SELECT]->remove_cursor(clicked, cursorpos))
-			return true;
-
-		return false;
-	}
-
 	Cursor::State UIGender::send_cursor(bool clicked, Point<int16_t> cursorpos)
 	{
-		if (buttons[Buttons::SELECT]->is_pressed())
-		{
-			if (buttons[Buttons::SELECT]->in_combobox(cursorpos))
-			{
-				if (Cursor::State new_state = buttons[Buttons::SELECT]->send_cursor(clicked, cursorpos))
-					return new_state;
-			}
-			else
-			{
-				remove_cursor(clicked, cursorpos);
-			}
-		}
+		auto& combobox = buttons[Buttons::SELECT];
+
+		if (combobox->is_pressed() && combobox->in_combobox(cursorpos))
+			if (Cursor::State new_state = combobox->send_cursor(clicked, cursorpos))
+				return new_state;
 
 		return UIElement::send_cursor(clicked, cursorpos);
+	}
+
+	UIElement::Type UIGender::get_type() const
+	{
+		return TYPE;
 	}
 
 	Button::State UIGender::button_pressed(uint16_t buttonid)
 	{
 		switch (buttonid)
 		{
-		case Buttons::NO:
-			deactivate();
-			okhandler();
-			break;
-		case Buttons::YES:
-		{
-			UI::get().emplace<UILoginwait>();
+			case Buttons::NO:
+			{
+				deactivate();
+				okhandler();
 
-			uint16_t selected_value = buttons[Buttons::SELECT]->get_selected();
-			GenderPacket(selected_value).dispatch();
-		}
-		break;
-		case Buttons::SELECT:
-			buttons[Buttons::SELECT]->toggle_pressed();
-			break;
-		default:
-			break;
-		}
+				return Button::State::NORMAL;
+			}
+			case Buttons::YES:
+			{
+				UI::get().emplace<UILoginWait>();
 
-		return Button::State::NORMAL;
+				uint16_t selected_value = buttons[Buttons::SELECT]->get_selected();
+				GenderPacket(selected_value).dispatch();
+
+				return Button::State::NORMAL;
+			}
+			case Buttons::SELECT:
+			{
+				buttons[Buttons::SELECT]->toggle_pressed();
+
+				return Button::State::NORMAL;
+			}
+			default:
+			{
+				return Button::State::DISABLED;
+			}
+		}
 	}
 }

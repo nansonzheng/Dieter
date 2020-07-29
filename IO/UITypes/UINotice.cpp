@@ -20,13 +20,16 @@
 #include "../UI.h"
 
 #include "../Components/MapleButton.h"
-#include "../Audio/Audio.h"
 
+#include "../../Audio/Audio.h"
+
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
-	UINotice::UINotice(std::string message, NoticeType t, Text::Alignment a) : UIDragElement<PosNOTICE>(Point<int16_t>()), type(t), alignment(a)
+	UINotice::UINotice(std::string message, NoticeType t, Text::Alignment a) : UIDragElement<PosNOTICE>(), type(t), alignment(a)
 	{
 		nl::node src = nl::nx::ui["Basic.img"]["Notice6"];
 
@@ -107,19 +110,6 @@ namespace ms
 		bottombox.draw(start);
 	}
 
-	void UINotice::send_key(int32_t keycode, bool pressed, bool escape)
-	{
-		if (pressed && (keycode == KeyAction::Id::RETURN || escape))
-		{
-			if (type == NoticeType::OK)
-				UI::get().get_element<UIOk>()->send_key(keycode, pressed, escape);
-			else if (type == NoticeType::YESNO)
-				UI::get().get_element<UIYesNo>()->send_key(keycode, pressed, escape);
-			else if (type == NoticeType::ENTERNUMBER)
-				UI::get().get_element<UIEnterNumber>()->send_key(keycode, pressed, escape);
-		}
-	}
-
 	int16_t UINotice::box2offset(bool textfield) const
 	{
 		int16_t offset = top.height() + centerbox.height() + box.height() + height - (textfield ? 0 : 16);
@@ -156,17 +146,24 @@ namespace ms
 		if (keycode == KeyAction::Id::RETURN)
 		{
 			yesnohandler(true);
-			active = false;
+			deactivate();
 		}
 		else if (escape)
 		{
 			yesnohandler(false);
-			active = false;
+			deactivate();
 		}
+	}
+
+	UIElement::Type UIYesNo::get_type() const
+	{
+		return TYPE;
 	}
 
 	Button::State UIYesNo::button_pressed(uint16_t buttonid)
 	{
+		deactivate();
+
 		switch (buttonid)
 		{
 		case Buttons::YES:
@@ -176,8 +173,6 @@ namespace ms
 			yesnohandler(false);
 			break;
 		}
-
-		active = false;
 
 		return Button::State::PRESSED;
 	}
@@ -209,7 +204,7 @@ namespace ms
 			KeyAction::Id::ESCAPE,
 			[&]()
 			{
-				active = false;
+				deactivate();
 			}
 		);
 
@@ -249,12 +244,17 @@ namespace ms
 		if (keycode == KeyAction::Id::RETURN)
 		{
 			handlestring(numfield.get_text());
-			active = false;
+			deactivate();
 		}
 		else if (escape)
 		{
-			active = false;
+			deactivate();
 		}
+	}
+
+	UIElement::Type UIEnterNumber::get_type() const
+	{
+		return TYPE;
 	}
 
 	Button::State UIEnterNumber::button_pressed(uint16_t buttonid)
@@ -265,7 +265,7 @@ namespace ms
 			handlestring(numfield.get_text());
 			break;
 		case Buttons::CANCEL:
-			active = false;
+			deactivate();
 			break;
 		}
 
@@ -277,7 +277,7 @@ namespace ms
 		int num = -1;
 		bool has_only_digits = (numstr.find_first_not_of("0123456789") == std::string::npos);
 
-		auto okhandler = [&]()
+		auto okhandler = [&](bool)
 		{
 			numfield.set_state(Textfield::State::FOCUSED);
 			buttons[Buttons::OK]->set_state(Button::State::NORMAL);
@@ -309,13 +309,13 @@ namespace ms
 		else
 		{
 			numhandler(num);
-			active = false;
+			deactivate();
 		}
 
 		buttons[Buttons::OK]->set_state(Button::State::NORMAL);
 	}
 
-	UIOk::UIOk(std::string message, std::function<void()> oh) : UINotice(message, NoticeType::OK)
+	UIOk::UIOk(std::string message, std::function<void(bool ok)> oh) : UINotice(message, NoticeType::OK)
 	{
 		okhandler = oh;
 
@@ -332,27 +332,36 @@ namespace ms
 
 	void UIOk::send_key(int32_t keycode, bool pressed, bool escape)
 	{
-		if (keycode == KeyAction::Id::RETURN)
+		if (pressed)
 		{
-			okhandler();
-			active = false;
+			if (keycode == KeyAction::Id::RETURN)
+			{
+				okhandler(true);
+				deactivate();
+			}
+			else if (escape)
+			{
+				okhandler(false);
+				deactivate();
+			}
 		}
-		else if (escape)
-		{
-			active = false;
-		}
+	}
+
+	UIElement::Type UIOk::get_type() const
+	{
+		return TYPE;
 	}
 
 	Button::State UIOk::button_pressed(uint16_t buttonid)
 	{
+		deactivate();
+
 		switch (buttonid)
 		{
 		case Buttons::OK:
-			okhandler();
+			okhandler(true);
 			break;
 		}
-
-		active = false;
 
 		return Button::State::NORMAL;
 	}

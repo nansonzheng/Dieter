@@ -17,21 +17,21 @@
 //////////////////////////////////////////////////////////////////////////////////
 #include "Stage.h"
 
-#include "../Audio/Audio.h"
-#include "../Character/SkillId.h"
-#include "../IO/Messages.h"
-#include "../Util/Misc.h"
+#include "../Configuration.h"
 
-#include "../Net/Packets/GameplayPackets.h"
+#include "../IO/UI.h"
+
+#include "../IO/UITypes/UIStatusBar.h"
 #include "../Net/Packets/AttackAndSkillPackets.h"
+#include "../Net/Packets/GameplayPackets.h"
 
-#include <iostream>
-
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
-	Stage::Stage() : combat(player, chars, mobs)
+	Stage::Stage() : combat(player, chars, mobs, reactors)
 	{
 		state = State::INACTIVE;
 	}
@@ -45,13 +45,13 @@ namespace ms
 	{
 		switch (state)
 		{
-		case State::INACTIVE:
-			load_map(mapid);
-			respawn(portalid);
-			break;
-		case State::TRANSITION:
-			respawn(portalid);
-			break;
+			case State::INACTIVE:
+				load_map(mapid);
+				respawn(portalid);
+				break;
+			case State::TRANSITION:
+				respawn(portalid);
+				break;
 		}
 
 		state = State::ACTIVE;
@@ -61,6 +61,12 @@ namespace ms
 	{
 		player = entry;
 		playable = player;
+
+		start = ContinuousTimer::get().start();
+
+		CharStats stats = player.get_stats();
+		levelBefore = stats.get_stat(MapleStat::Id::LEVEL);
+		expBefore = stats.get_exp();
 	}
 
 	void Stage::clear()
@@ -76,9 +82,12 @@ namespace ms
 
 	void Stage::load_map(int32_t mapid)
 	{
+		Stage::mapid = mapid;
+
 		std::string strid = string_format::extend_id(mapid, 9);
 		std::string prefix = std::to_string(mapid / 100000000);
-		nl::node src = nl::nx::map["Map"]["Map" + prefix][strid + ".img"];
+
+		nl::node src = mapid == -1 ? nl::nx::ui["CashShopPreview.img"] : nl::nx::map["Map"]["Map" + prefix][strid + ".img"];
 
 		tilesobjs = MapTilesObjs(src);
 		backgrounds = MapBackgrounds(src["back"]);
@@ -147,6 +156,27 @@ namespace ms
 		portals.update(player.get_position());
 		camera.update(player.get_position());
 
+		if (!player.is_climbing() && !player.is_sitting() && !player.is_attacking())
+		{
+			if (player.is_key_down(KeyAction::Id::UP) && !player.is_key_down(KeyAction::Id::DOWN))
+				check_ladders(true);
+
+			if (player.is_key_down(KeyAction::Id::UP))
+				check_portals();
+
+			if (player.is_key_down(KeyAction::Id::DOWN))
+				check_ladders(false);
+
+			if (player.is_key_down(KeyAction::Id::SIT))
+				check_seats();
+
+			if (player.is_key_down(KeyAction::Id::ATTACK))
+				combat.use_move(0);
+
+			if (player.is_key_down(KeyAction::Id::PICKUP))
+				check_drops();
+		}
+
 		if (player.is_invincible())
 			return;
 
@@ -183,12 +213,13 @@ namespace ms
 		}
 		else if (warpinfo.valid)
 		{
-			PlayerMapTransferPacket().dispatch();
-			ChangeMapPacket(false, warpinfo.mapid, warpinfo.name, false).dispatch();
+			ChangeMapPacket(false, -1, warpinfo.name, false).dispatch();
 
 			CharStats& stats = Stage::get().get_player().get_stats();
 
 			stats.set_mapid(warpinfo.mapid);
+
+			Sound(Sound::Name::PORTAL).play();
 		}
 	}
 
@@ -203,7 +234,7 @@ namespace ms
 
 	void Stage::check_ladders(bool up)
 	{
-		if (player.is_climbing() || player.is_attacking())
+		if (!player.can_climb() || player.is_climbing() || player.is_attacking())
 			return;
 
 		Optional<const Ladder> ladder = mapinfo.findladder(player.get_position(), up);
@@ -226,46 +257,34 @@ namespace ms
 
 		switch (type)
 		{
-		case KeyType::Id::ACTION:
-			if (down)
-			{
-				switch (action)
-				{
-				case KeyAction::Id::UP:
-					check_ladders(true);
-					check_portals();
-					break;
-				case KeyAction::Id::DOWN:
-					check_ladders(false);
-					break;
-				case KeyAction::Id::SIT:
-					check_seats();
-					break;
-				case KeyAction::Id::ATTACK:
-					combat.use_move(0);
-					break;
-				case KeyAction::Id::PICKUP:
-					check_drops();
-					break;
-				}
-			}
-
-			playable->send_action(KeyAction::actionbyid(action), down);
-			break;
-		case KeyType::Id::SKILL:
-			combat.use_move(action);
-			break;
-		case KeyType::Id::ITEM:
-			player.use_item(action);
-			break;
-		case KeyType::Id::FACE:
-			player.set_expression(action);
-			break;
+			case KeyType::Id::ACTION:
+				playable->send_action(KeyAction::actionbyid(action), down);
+				break;
+			case KeyType::Id::SKILL:
+				combat.use_move(action);
+				break;
+			case KeyType::Id::ITEM:
+				player.use_item(action);
+				break;
+			case KeyType::Id::FACE:
+				player.set_expression(action);
+				break;
 		}
 	}
 
 	Cursor::State Stage::send_cursor(bool pressed, Point<int16_t> position)
 	{
+		auto statusbar = UI::get().get_element<UIStatusBar>();
+
+		if (statusbar && statusbar->is_menu_active())
+		{
+			if (pressed)
+				statusbar->remove_menus();
+
+			if (statusbar->is_in_range(position))
+				return statusbar->send_cursor(pressed, position);
+		}
+
 		return npcs.send_cursor(pressed, position, camera.position());
 	}
 
@@ -317,8 +336,36 @@ namespace ms
 			return chars.get_char(cid);
 	}
 
+	int Stage::get_mapid()
+	{
+		return mapid;
+	}
+
 	void Stage::add_effect(std::string path)
 	{
 		effect = MapEffect(path);
+	}
+
+	int64_t Stage::get_uptime()
+	{
+		return ContinuousTimer::get().stop(start);
+	}
+
+	uint16_t Stage::get_uplevel()
+	{
+		return levelBefore;
+	}
+
+	int64_t Stage::get_upexp()
+	{
+		return expBefore;
+	}
+
+	void Stage::transfer_player()
+	{
+		PlayerMapTransferPacket().dispatch();
+
+		if (Configuration::get().get_admin())
+			AdminEnterMapPacket(AdminEnterMapPacket::Operation::ALERT_ADMINS).dispatch();
 	}
 }

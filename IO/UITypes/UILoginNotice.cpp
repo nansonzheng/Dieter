@@ -20,9 +20,12 @@
 #include "../UI.h"
 
 #include "../Components/MapleButton.h"
-#include "../Audio/Audio.h"
 
+#include "../../Audio/Audio.h"
+
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
@@ -35,15 +38,15 @@ namespace ms
 
 		switch (message)
 		{
-		case Message::NAME_IN_USE:
-		case Message::ILLEGAL_NAME:
-		case Message::BLOCKED_ID:
-		case Message::INCORRECT_PIC:
-			backgrnd = Notice["backgrnd"]["1"];
-			break;
-		default:
-			backgrnd = Notice["backgrnd"]["0"];
-			break;
+			case Message::NAME_IN_USE:
+			case Message::ILLEGAL_NAME:
+			case Message::BLOCKED_ID:
+			case Message::INCORRECT_PIC:
+				backgrnd = Notice["backgrnd"]["1"];
+				break;
+			default:
+				backgrnd = Notice["backgrnd"]["0"];
+				break;
 		}
 
 		sprites.emplace_back(backgrnd);
@@ -61,17 +64,12 @@ namespace ms
 			buttons[Buttons::YES] = std::make_unique<MapleButton>(Notice["BtYes"], Point<int16_t>(100, 106));
 		}
 
-		position = Point<int16_t>(275, 199);
+		position = Point<int16_t>(275, 209);
 		dimension = Texture(backgrnd).get_dimensions();
 	}
 
 	UILoginNotice::UILoginNotice(uint16_t message, std::function<void()> okhandler) : UILoginNotice(message, okhandler, []() {}) {}
 	UILoginNotice::UILoginNotice(uint16_t message) : UILoginNotice(message, []() {}) {}
-
-	void UILoginNotice::draw(float alpha) const
-	{
-		UIElement::draw(alpha);
-	}
 
 	void UILoginNotice::send_key(int32_t keycode, bool pressed, bool escape)
 	{
@@ -94,6 +92,11 @@ namespace ms
 		}
 	}
 
+	UIElement::Type UILoginNotice::get_type() const
+	{
+		return TYPE;
+	}
+
 	Button::State UILoginNotice::button_pressed(uint16_t buttonid)
 	{
 		if (buttonid == Buttons::YES)
@@ -109,24 +112,16 @@ namespace ms
 	UIQuitConfirm::UIQuitConfirm()
 	{
 		nl::node notice = nl::nx::ui["Login.img"]["Notice"];
+		nl::node backgrnd = notice["backgrnd"]["0"];
 
-		background = notice["backgrnd"]["0"];
-		text = { notice["text"][UILoginNotice::Message::CONFIRM_EXIT], { 17, 13 } };
+		sprites.emplace_back(backgrnd);
+		sprites.emplace_back(notice["text"][UILoginNotice::Message::CONFIRM_EXIT], Point<int16_t>(17, 13));
 
-		buttons[BT_OK] = std::make_unique<MapleButton>(notice["BtYes"], Point<int16_t>(70, 106));
-		buttons[BT_CANCEL] = std::make_unique<MapleButton>(notice["BtNo"], Point<int16_t>(130, 106));
+		buttons[Buttons::BT_OK] = std::make_unique<MapleButton>(notice["BtYes"], Point<int16_t>(70, 106));
+		buttons[Buttons::BT_CANCEL] = std::make_unique<MapleButton>(notice["BtNo"], Point<int16_t>(130, 106));
 
-		position = { 275, 199 };
-		dimension = { 362, 219 };
-		active = true;
-	}
-
-	void UIQuitConfirm::draw(float alpha) const
-	{
-		background.draw(position);
-		text.draw(position, alpha);
-
-		UIElement::draw(alpha);
+		position = Point<int16_t>(275, 209);
+		dimension = Texture(backgrnd).get_dimensions();
 	}
 
 	void UIQuitConfirm::send_key(int32_t keycode, bool pressed, bool escape)
@@ -135,14 +130,19 @@ namespace ms
 		{
 			if (escape)
 			{
-				active = false;
+				deactivate();
 			}
 			else if (keycode == KeyAction::RETURN)
 			{
 				UI::get().quit();
-				active = false;
+				deactivate();
 			}
 		}
+	}
+
+	UIElement::Type UIQuitConfirm::get_type() const
+	{
+		return TYPE;
 	}
 
 	Button::State UIQuitConfirm::button_pressed(uint16_t buttonid)
@@ -150,103 +150,25 @@ namespace ms
 		if (buttonid == BT_OK)
 			UI::get().quit();
 
-		active = false;
+		deactivate();
+
 		return Button::PRESSED;
 	}
 
-	UIClassConfirm::UIClassConfirm(uint8_t selected_class, bool unavailable, std::function<void()> okhandler) : okhandler(okhandler)
+	UIClassConfirm::UIClassConfirm(uint16_t selected_class, bool unavailable, std::function<void()> okhandler) : okhandler(okhandler)
 	{
 		nl::node RaceSelect = nl::nx::ui["Login.img"]["RaceSelect_new"];
 		nl::node type = unavailable ? RaceSelect["deny"] : RaceSelect["confirm"];
 		nl::node backgrnd = type["backgrnd"];
 		nl::node race = type["race"][selected_class];
 
-		Point<int16_t> race_pos = Point<int16_t>(0, 0);
+		int16_t backgrnd_x = Texture(backgrnd).get_dimensions().x();
+		int16_t race_x = Texture(race).get_dimensions().x();
 
-		// TODO: Calculate position based on width of race?
-		switch (selected_class)
-		{
-		case Classes::RESISTANCE:
-			race_pos = Point<int16_t>(57, 10);
-			break;
-		case Classes::EXPLORER:
-			race_pos = Point<int16_t>(71, 10);
-			break;
-		case Classes::CYGNUSKNIGHTS:
-			race_pos = Point<int16_t>(32, 10);
-			break;
-		case Classes::ARAN:
-			race_pos = Point<int16_t>(95, 10);
-			break;
-		case Classes::EVAN:
-			race_pos = Point<int16_t>(93, 10);
-			break;
-		case Classes::MERCEDES:
-			race_pos = Point<int16_t>(65, 10);
-			break;
-		case Classes::DEMON:
-			race_pos = Point<int16_t>(85, 10);
-			break;
-		case Classes::PHANTOM:
-			race_pos = Point<int16_t>(71, 10);
-			break;
-		case Classes::DUALBLADE:
-			race_pos = Point<int16_t>(54, 10);
-			break;
-		case Classes::MIHILE:
-			race_pos = Point<int16_t>(85, 10);
-			break;
-		case Classes::LUMINOUS:
-			race_pos = Point<int16_t>(66, 10);
-			break;
-		case Classes::KAISER:
-			race_pos = Point<int16_t>(87, 10);
-			break;
-		case Classes::ANGELICBUSTER:
-			race_pos = Point<int16_t>(41, 10);
-			break;
-		case Classes::CANNONEER:
-			race_pos = Point<int16_t>(57, 10);
-			break;
-		case Classes::XENON:
-			race_pos = Point<int16_t>(88, 10);
-			break;
-		case Classes::ZERO:
-			break;
-		case Classes::SHADE:
-			race_pos = Point<int16_t>(86, 10);
-			break;
-		case Classes::JETT:
-			race_pos = Point<int16_t>(101, 10);
-			break;
-		case Classes::HAYATO:
-			race_pos = Point<int16_t>(81, 10);
-			break;
-		case Classes::KANNA:
-			race_pos = Point<int16_t>(86, 10);
-			break;
-		case Classes::CHASE:
-			break;
-		case Classes::PINKBEAN:
-			break;
-		case Classes::KINESIS:
-			race_pos = Point<int16_t>(84, 10);
-			break;
-		case Classes::CADENA:
-			race_pos = Point<int16_t>(77, 10);
-			break;
-		case Classes::ILLIUM:
-			race_pos = Point<int16_t>(92, 10);
-			break;
-		case Classes::ARK:
-			race_pos = Point<int16_t>(100, 10);
-			break;
-		default:
-			break;
-		}
+		int16_t pos_x = (backgrnd_x - race_x) / 2;
 
 		sprites.emplace_back(backgrnd);
-		sprites.emplace_back(race, race_pos + (Point<int16_t>)race["origin"]);
+		sprites.emplace_back(race, Point<int16_t>(pos_x, 10) + (Point<int16_t>)race["origin"]);
 
 		if (unavailable)
 		{
@@ -258,18 +180,8 @@ namespace ms
 			buttons[Buttons::CANCEL] = std::make_unique<MapleButton>(type["BtCancel"], Point<int16_t>(137, 107));
 		}
 
-		position = Point<int16_t>(286, 179);
+		position = Point<int16_t>(286, 189);
 		dimension = Texture(backgrnd).get_dimensions();
-	}
-
-	void UIClassConfirm::draw(float inter) const
-	{
-		UIElement::draw(inter);
-	}
-
-	bool UIClassConfirm::remove_cursor(bool clicked, Point<int16_t> cursorpos)
-	{
-		return false;
 	}
 
 	Cursor::State UIClassConfirm::send_cursor(bool clicked, Point<int16_t> cursorpos)
@@ -314,6 +226,11 @@ namespace ms
 		}
 	}
 
+	UIElement::Type UIClassConfirm::get_type() const
+	{
+		return TYPE;
+	}
+
 	Button::State UIClassConfirm::button_pressed(uint16_t buttonid)
 	{
 		deactivate();
@@ -331,16 +248,15 @@ namespace ms
 
 		sprites.emplace_back(backgrnd);
 
+		buttons[Buttons::CLOSE] = std::make_unique<MapleButton>(KeyType["btClose"]);
 		buttons[Buttons::TYPEA] = std::make_unique<MapleButton>(KeyType["btTypeA"]);
 		buttons[Buttons::TYPEB] = std::make_unique<MapleButton>(KeyType["btTypeB"], Point<int16_t>(1, 1));
 
-		position = Point<int16_t>(181, 135);
-		dimension = Texture(backgrnd).get_dimensions();
-	}
+		if (login)
+			buttons[Buttons::CLOSE]->set_active(false);
 
-	void UIKeySelect::draw(float alpha) const
-	{
-		UIElement::draw(alpha);
+		position = Point<int16_t>(181, 145);
+		dimension = Texture(backgrnd).get_dimensions();
 	}
 
 	void UIKeySelect::send_key(int32_t keycode, bool pressed, bool escape)
@@ -350,22 +266,39 @@ namespace ms
 				deactivate();
 	}
 
+	UIElement::Type UIKeySelect::get_type() const
+	{
+		return TYPE;
+	}
+
 	Button::State UIKeySelect::button_pressed(uint16_t buttonid)
 	{
-		bool alternate = (buttonid == Buttons::TYPEA) ? false : true;
-
-		if (alternate)
-			buttons[Buttons::TYPEA]->set_state(Button::State::DISABLED);
-		else
-			buttons[Buttons::TYPEB]->set_state(Button::State::DISABLED);
-
-		auto onok = [&, alternate]()
+		switch (buttonid)
 		{
-			okhandler(alternate);
-			deactivate();
-		};
+			default:
+			case Buttons::CLOSE:
+				deactivate();
+				break;
+			case Buttons::TYPEA:
+			case Buttons::TYPEB:
+			{
+				bool alternate = (buttonid == Buttons::TYPEA) ? false : true;
 
-		UI::get().emplace<UIKeyConfirm>(alternate, onok, login);
+				if (alternate)
+					buttons[Buttons::TYPEA]->set_state(Button::State::DISABLED);
+				else
+					buttons[Buttons::TYPEB]->set_state(Button::State::DISABLED);
+
+				auto onok = [&, alternate]()
+				{
+					okhandler(alternate);
+					deactivate();
+				};
+
+				UI::get().emplace<UIKeyConfirm>(alternate, onok, login);
+				break;
+			}
+		}
 
 		return Button::State::DISABLED;
 	}
@@ -379,13 +312,8 @@ namespace ms
 
 		buttons[Buttons::OK] = std::make_unique<MapleButton>(alert["btOk"]);
 
-		position = Point<int16_t>(276, 219);
+		position = Point<int16_t>(276, 229);
 		dimension = Texture(background).get_dimensions();
-	}
-
-	void UIKeyConfirm::draw(float alpha) const
-	{
-		UIElement::draw(alpha);
 	}
 
 	void UIKeyConfirm::send_key(int32_t keycode, bool pressed, bool escape)
@@ -393,10 +321,21 @@ namespace ms
 		if (pressed)
 		{
 			if (keycode == KeyAction::Id::RETURN)
+			{
 				confirm();
+			}
 			else if (!login && escape)
+			{
+				deactivate();
+
 				UI::get().remove(UIElement::Type::LOGINNOTICE);
+			}
 		}
+	}
+
+	UIElement::Type UIKeyConfirm::get_type() const
+	{
+		return TYPE;
 	}
 
 	Button::State UIKeyConfirm::button_pressed(uint16_t buttonid)

@@ -69,6 +69,8 @@ namespace ms
 			KEYCONFIG,
 			OPTIONMENU,
 			QUIT,
+			CHARINFO,
+			CASHSHOP,
 			NUM_TYPES
 		};
 
@@ -76,22 +78,25 @@ namespace ms
 
 		virtual void draw(float inter) const;
 		virtual void update();
+		virtual void update_screen(int16_t new_width, int16_t new_height) {}
 
 		void makeactive();
 		void deactivate();
 		bool is_active() const;
 
 		virtual void toggle_active();
-		virtual Button::State button_pressed(uint16_t buttonid);
-		virtual bool send_icon(const Icon& icon, Point<int16_t> cursorpos);
+		virtual Button::State button_pressed(uint16_t buttonid) { return Button::State::DISABLED; }
+		virtual bool send_icon(const Icon& icon, Point<int16_t> cursorpos) { return true; }
 
-		virtual void doubleclick(Point<int16_t> cursorpos);
-		virtual void rightclick(Point<int16_t> cursorpos);
+		virtual void doubleclick(Point<int16_t> cursorpos) {}
+		virtual void rightclick(Point<int16_t> cursorpos) {}
 		virtual bool is_in_range(Point<int16_t> cursorpos) const;
-		virtual bool remove_cursor(bool clicked, Point<int16_t> cursorpos);
+		virtual void remove_cursor();
 		virtual Cursor::State send_cursor(bool clicked, Point<int16_t> cursorpos);
-		virtual void send_scroll(double yoffset);
-		virtual void send_key(int32_t keycode, bool pressed, bool escape);
+		virtual void send_scroll(double yoffset) {}
+		virtual void send_key(int32_t keycode, bool pressed, bool escape) {}
+
+		virtual UIElement::Type get_type() const = 0;
 
 	protected:
 		UIElement(Point<int16_t> position, Point<int16_t> dimension, bool active);

@@ -40,7 +40,7 @@ namespace ms
 	void UIElement::draw_buttons(float) const
 	{
 		for (auto& iter : buttons)
-			if (const Button * button = iter.second.get())
+			if (const Button* button = iter.second.get())
 				button->draw(position);
 	}
 
@@ -50,7 +50,7 @@ namespace ms
 			sprite.update();
 
 		for (auto& iter : buttons)
-			if (Button * button = iter.second.get())
+			if (Button* button = iter.second.get())
 				button->update();
 	}
 
@@ -72,22 +72,10 @@ namespace ms
 	void UIElement::toggle_active()
 	{
 		if (active)
-		{
-			Sound(Sound::Name::MENUDOWN).play();
-			active = false;
-		}
+			deactivate();
 		else
-		{
-			Sound(Sound::Name::MENUUP).play();
-			active = true;
-		}
+			makeactive();
 	}
-
-	Button::State UIElement::button_pressed(uint16_t) { return Button::State::DISABLED; }
-	bool UIElement::send_icon(const Icon&, Point<int16_t>) { return true; }
-
-	void UIElement::doubleclick(Point<int16_t>) {}
-	void UIElement::rightclick(Point<int16_t>) {}
 
 	bool UIElement::is_in_range(Point<int16_t> cursorpos) const
 	{
@@ -96,21 +84,15 @@ namespace ms
 		return bounds.contains(cursorpos);
 	}
 
-	bool UIElement::remove_cursor(bool, Point<int16_t>)
+	void UIElement::remove_cursor()
 	{
 		for (auto& btit : buttons)
 		{
-			Button* button = btit.second.get();
+			auto button = btit.second.get();
 
-			switch (button->get_state())
-			{
-			case Button::State::MOUSEOVER:
+			if (button->get_state() == Button::State::MOUSEOVER)
 				button->set_state(Button::State::NORMAL);
-				break;
-			}
 		}
-
-		return false;
 	}
 
 	Cursor::State UIElement::send_cursor(bool down, Point<int16_t> pos)
@@ -152,7 +134,4 @@ namespace ms
 
 		return ret;
 	}
-
-	void UIElement::send_scroll(double) {}
-	void UIElement::send_key(int32_t, bool, bool) {}
 }

@@ -20,19 +20,22 @@
 #include "../UI.h"
 
 #include "../Components/MapleButton.h"
-#include "../Data/ItemData.h"
 
+#include "../../Data/ItemData.h"
+
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
-	UIEvent::UIEvent() : UIDragElement<PosEVENT>(Point<int16_t>())
+	UIEvent::UIEvent() : UIDragElement<PosEVENT>()
 	{
 		offset = 0;
 		event_count = 16;
 
 		nl::node main = nl::nx::ui["UIWindow2.img"]["EventList"]["main"];
-		nl::node close = nl::nx::ui["Basic.img"]["BtClose"];
+		nl::node close = nl::nx::ui["Basic.img"]["BtClose3"];
 
 		nl::node backgrnd = main["backgrnd"];
 		Point<int16_t> bg_dimensions = Texture(backgrnd).get_dimensions();
@@ -40,7 +43,7 @@ namespace ms
 		sprites.emplace_back(backgrnd);
 		sprites.emplace_back(main["backgrnd2"], Point<int16_t>(1, 0));
 
-		buttons[Buttons::CLOSE] = std::make_unique<MapleButton>(close, Point<int16_t>(bg_dimensions.x() - 13, 12));
+		buttons[Buttons::CLOSE] = std::make_unique<MapleButton>(close, Point<int16_t>(bg_dimensions.x() - 19, 6));
 
 		bool in_progress = false;
 		bool item_rewards = false;
@@ -66,7 +69,7 @@ namespace ms
 		label_next = main["label_next"]["0"];
 
 		slider = Slider(
-			Slider::Type::DEFAULT, Range<int16_t>(86, 449), 396, 3, event_count,
+			Slider::Type::DEFAULT_SILVER, Range<int16_t>(86, 449), 396, 3, event_count,
 			[&](bool upwards)
 			{
 				int16_t shift = upwards ? -1 : 1;
@@ -79,6 +82,7 @@ namespace ms
 		);
 
 		dimension = bg_dimensions;
+		dragarea = Point<int16_t>(dimension.x(), 20);
 	}
 
 	void UIEvent::draw(float inter) const
@@ -163,12 +167,13 @@ namespace ms
 		}
 	}
 
-	bool UIEvent::remove_cursor(bool clicked, Point<int16_t> cursorpos)
+	void UIEvent::remove_cursor()
 	{
-		if (slider.remove_cursor(clicked))
-			return true;
+		UIDragElement::remove_cursor();
 
-		return UIElement::remove_cursor(clicked, cursorpos);
+		UI::get().clear_tooltip(Tooltip::Parent::EVENT);
+
+		slider.remove_cursor();
 	}
 
 	Cursor::State UIEvent::send_cursor(bool clicked, Point<int16_t> cursorpos)
@@ -176,16 +181,8 @@ namespace ms
 		Point<int16_t> cursoroffset = cursorpos - position;
 
 		if (slider.isenabled())
-		{
-			Cursor::State state = slider.send_cursor(cursoroffset, clicked);
-
-			if (state != Cursor::State::IDLE)
-			{
-				clear_tooltip();
-
-				return state;
-			}
-		}
+			if (Cursor::State new_state = slider.send_cursor(cursoroffset, clicked))
+				return new_state;
 
 		int16_t yoff = cursoroffset.y();
 		int16_t xoff = cursoroffset.x();
@@ -194,16 +191,19 @@ namespace ms
 
 		if (row > 0 && row < 4 && col > 0 && col < 6)
 			show_item(row, col);
-		else
-			clear_tooltip();
 
-		return UIElement::send_cursor(clicked, cursorpos);
+		return UIDragElement::send_cursor(clicked, cursorpos);
 	}
 
 	void UIEvent::send_key(int32_t keycode, bool pressed, bool escape)
 	{
 		if (pressed && escape)
 			close();
+	}
+
+	UIElement::Type UIEvent::get_type() const
+	{
+		return TYPE;
 	}
 
 	Button::State UIEvent::button_pressed(uint16_t buttonid)
@@ -219,14 +219,9 @@ namespace ms
 		return Button::State::NORMAL;
 	}
 
-	void UIEvent::clear_tooltip()
-	{
-		UI::get().clear_tooltip(Tooltip::Parent::EVENT);
-	}
-
 	void UIEvent::close()
 	{
-		active = false;
+		deactivate();
 	}
 
 	std::string UIEvent::get_event_title(uint8_t id)
@@ -338,6 +333,6 @@ namespace ms
 
 	void UIEvent::show_item(int16_t row, int16_t col)
 	{
-		UI::get().show_item(Tooltip::Parent::SHOP, 2000000 + col - 1);
+		UI::get().show_item(Tooltip::Parent::EVENT, 2000000 + col - 1);
 	}
 }

@@ -21,7 +21,6 @@
 
 #include <Windows.h>
 #include <IPHlpApi.h>
-#include <cstdio>
 
 namespace ms
 {
@@ -30,8 +29,10 @@ namespace ms
 	public:
 		HardwareInfo()
 		{
+			size_t size = 18;
+
 			// Hard Drive VolumeSerialNumber
-			char* volumeSerialNumber = (char*)malloc(18);
+			char* volumeSerialNumber = (char*)malloc(size);
 
 			TCHAR szVolume[MAX_PATH + 1];
 			TCHAR szFileSystem[MAX_PATH + 1];
@@ -48,7 +49,7 @@ namespace ms
 
 			if (bSuccess)
 			{
-				sprintf(volumeSerialNumber, "%X%X", HIWORD(dwSerialNumber), LOWORD(dwSerialNumber));
+				sprintf_s(volumeSerialNumber, size, "%X%X", HIWORD(dwSerialNumber), LOWORD(dwSerialNumber));
 			}
 			else
 			{
@@ -60,8 +61,8 @@ namespace ms
 			// HWID/MACS
 			PIP_ADAPTER_INFO AdapterInfo;
 			DWORD dwBufLen = sizeof(IP_ADAPTER_INFO);
-			char* hwid = (char*)malloc(18);
-			char* macs = (char*)malloc(18);
+			char* hwid = (char*)malloc(size);
+			char* macs = (char*)malloc(size);
 
 			AdapterInfo = (IP_ADAPTER_INFO*)malloc(sizeof(IP_ADAPTER_INFO));
 
@@ -95,8 +96,8 @@ namespace ms
 				// Contains pointer to current adapter info
 				PIP_ADAPTER_INFO pAdapterInfo = AdapterInfo;
 
-				// Technically should look at pAdapterInfo->AddressLength and not assume it is 6.
-				sprintf(hwid, "%02X%02X%02X%02X%02X%02X",
+				// Technically should look at pAdapterInfo->AddressLength and not assume it is 6
+				sprintf_s(hwid, size, "%02X%02X%02X%02X%02X%02X",
 					pAdapterInfo->Address[0], pAdapterInfo->Address[1],
 					pAdapterInfo->Address[2], pAdapterInfo->Address[3],
 					pAdapterInfo->Address[4], pAdapterInfo->Address[5]);
@@ -105,8 +106,8 @@ namespace ms
 
 				pAdapterInfo = pAdapterInfo->Next;
 
-				// Technically should look at pAdapterInfo->AddressLength and not assume it is 6.
-				sprintf(macs, "%02X-%02X-%02X-%02X-%02X-%02X",
+				// Technically should look at pAdapterInfo->AddressLength and not assume it is 6
+				sprintf_s(macs, size, "%02X-%02X-%02X-%02X-%02X-%02X",
 					pAdapterInfo->Address[0], pAdapterInfo->Address[1],
 					pAdapterInfo->Address[2], pAdapterInfo->Address[3],
 					pAdapterInfo->Address[4], pAdapterInfo->Address[5]);

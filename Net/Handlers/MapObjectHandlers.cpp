@@ -18,17 +18,20 @@
 #include "MapObjectHandlers.h"
 
 #include "Helpers/LoginParser.h"
-#include "Helpers\MovementParser.h"
+#include "Helpers/MovementParser.h"
 
-#include "../Audio/Audio.h"
-#include "../Gameplay/Stage.h"
-#include "../Gameplay/Spawn.h"
+#include "../../Gameplay/Stage.h"
 
 namespace ms
 {
 	void SpawnCharHandler::handle(InPacket& recv) const
 	{
 		int32_t cid = recv.read_int();
+
+		// We don't need to spawn the player twice
+		if (Stage::get().is_player(cid))
+			return;
+
 		uint8_t level = recv.read_byte();
 		std::string name = recv.read_string();
 
@@ -190,7 +193,7 @@ namespace ms
 		}
 		else
 		{
-			// todo
+			// TODO: Blank
 		}
 	}
 
@@ -309,7 +312,7 @@ namespace ms
 	{
 		int32_t oid = recv.read_int();
 		int8_t hppercent = recv.read_byte();
-		uint16_t playerlevel = Stage::get().get_player().get_stats().get_stat(Maplestat::LEVEL);
+		uint16_t playerlevel = Stage::get().get_player().get_stats().get_stat(MapleStat::Id::LEVEL);
 
 		Stage::get().get_mobs().send_mobhp(oid, hppercent, playerlevel);
 	}
@@ -413,6 +416,18 @@ namespace ms
 		}
 
 		Stage::get().get_drops().remove(oid, mode, looter.get());
+	}
+
+	void HitReactorHandler::handle(InPacket& recv) const
+	{
+		int32_t oid = recv.read_int();
+		int8_t state = recv.read_byte();
+		Point<int16_t> point = recv.read_point();
+		int8_t stance = recv.read_byte(); // TODO: When is this different than state?
+		recv.skip(2); // TODO: Unused
+		recv.skip(1); // "frame" delay but this is in the WZ file?
+
+		Stage::get().get_reactors().trigger(oid, state);
 	}
 
 	void SpawnReactorHandler::handle(InPacket& recv) const

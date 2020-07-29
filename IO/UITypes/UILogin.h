@@ -20,7 +20,9 @@
 #include "../UIElement.h"
 
 #include "../Components/Textfield.h"
-#include "../Template/BoolPair.h"
+
+#include "../../Graphics/Geometry.h"
+#include "../../Template/BoolPair.h"
 
 namespace ms
 {
@@ -37,6 +39,8 @@ namespace ms
 		void update() override;
 
 		Cursor::State send_cursor(bool clicked, Point<int16_t> cursor_pos) override;
+
+		UIElement::Type get_type() const override;
 
 	protected:
 		Button::State button_pressed(uint16_t id) override;
@@ -63,6 +67,8 @@ namespace ms
 		Texture accountbg;
 		Texture passwordbg;
 		BoolPair<Texture> checkbox;
+		ColorBox background;
+		Point<int16_t> signboard_pos;
 
 		bool saveid;
 	};

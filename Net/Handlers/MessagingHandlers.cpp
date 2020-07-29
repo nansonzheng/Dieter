@@ -17,12 +17,12 @@
 //////////////////////////////////////////////////////////////////////////////////
 #include "MessagingHandlers.h"
 
-#include "../Data/ItemData.h"
-#include "../Gameplay/Stage.h"
-#include "../IO/UI.h"
+#include "../../Data/ItemData.h"
+#include "../../Gameplay/Stage.h"
+#include "../../IO/UI.h"
 
-#include "../IO/UITypes/UIStatusMessenger.h"
-#include "../IO/UITypes/UIChatbar.h"
+#include "../../IO/UITypes/UIChatBar.h"
+#include "../../IO/UITypes/UIStatusMessenger.h"
 
 namespace ms
 {
@@ -40,7 +40,11 @@ namespace ms
 		{
 			int8_t mode2 = recv.read_byte();
 
-			if (mode2 == 0)
+			if (mode2 == -1)
+			{
+				show_status(Color::Name::WHITE, "You can't get anymore items.");
+			}
+			else if (mode2 == 0)
 			{
 				int32_t itemid = recv.read_int();
 				int32_t qty = recv.read_int();
@@ -51,9 +55,47 @@ namespace ms
 					return;
 
 				std::string name = idata.get_name();
-				std::string sign = (qty < 0) ? "-" : "+";
 
-				show_status(Color::Name::WHITE, "Gained an item: " + name + " (" + sign + std::to_string(qty) + ")");
+				if (name.length() > 21)
+				{
+					name.substr(0, 21);
+					name += "..";
+				}
+
+				InventoryType::Id type = InventoryType::by_item_id(itemid);
+
+				std::string tab = "";
+
+				switch (type)
+				{
+				case InventoryType::Id::EQUIP:
+					tab = "Eqp";
+					break;
+				case InventoryType::Id::USE:
+					tab = "Use";
+					break;
+				case InventoryType::Id::SETUP:
+					tab = "Setup";
+					break;
+				case InventoryType::Id::ETC:
+					tab = "Etc";
+					break;
+				case InventoryType::Id::CASH:
+					tab = "Cash";
+					break;
+				default:
+					tab = "UNKNOWN";
+					break;
+				}
+
+				// TODO: show_status(Color::Name::WHITE, "You have lost items in the " + tab + " tab (" + name + " " + std::to_string(qty) + ")");
+
+				if (qty < 0)
+					show_status(Color::Name::WHITE, "You have lost an item in the " + tab + " tab (" + name + ")");
+				else if (qty == 1)
+					show_status(Color::Name::WHITE, "You have gained an item in the " + tab + " tab (" + name + ")");
+				else
+					show_status(Color::Name::WHITE, "You have gained items in the " + tab + " tab (" + name + " " + std::to_string(qty) + ")");
 			}
 			else if (mode2 == 1)
 			{
@@ -62,7 +104,11 @@ namespace ms
 				int32_t gain = recv.read_int();
 				std::string sign = (gain < 0) ? "-" : "+";
 
-				show_status(Color::Name::WHITE, "Received mesos (" + sign + std::to_string(gain) + ")");
+				show_status(Color::Name::WHITE, "You have gained mesos (" + sign + std::to_string(gain) + ")");
+			}
+			else
+			{
+				show_status(Color::Name::RED, "Mode: 0, Mode 2: " + std::to_string(mode2) + " is not handled.");
 			}
 		}
 		else if (mode == 3)
@@ -83,7 +129,7 @@ namespace ms
 
 			if (inchat)
 			{
-				// TODO: Blank
+				show_status(Color::Name::RED, "Mode: 3, inchat is not handled.");
 			}
 			else
 			{
@@ -98,11 +144,12 @@ namespace ms
 			int32_t gain = recv.read_int();
 			std::string sign = (gain < 0) ? "-" : "+";
 
-			show_status(Color::Name::WHITE, "Received fame (" + sign + std::to_string(gain) + ")");
+			// TODO: Lose fame?
+			show_status(Color::Name::WHITE, "You have gained fame. (" + sign + std::to_string(gain) + ")");
 		}
-		else if (mode == 5)
+		else
 		{
-			// TODO: Blank
+			show_status(Color::Name::RED, "Mode: " + std::to_string(mode) + " is not handled.");
 		}
 	}
 
@@ -148,7 +195,7 @@ namespace ms
 		if (message.substr(0, MAPLETIP.length()).compare("[MapleTip]"))
 			message = "[Notice] " + message;
 
-		UI::get().get_element<UIChatbar>()->send_chatline(message, UIChatbar::LineType::YELLOW);
+		UI::get().get_element<UIChatBar>()->send_chatline(message, UIChatBar::LineType::YELLOW);
 	}
 
 	void ChatReceivedHandler::handle(InPacket& recv) const
@@ -166,9 +213,9 @@ namespace ms
 			character->speak(message);
 		}
 
-		auto linetype = static_cast<UIChatbar::LineType>(type);
+		auto linetype = static_cast<UIChatBar::LineType>(type);
 
-		if (auto chatbar = UI::get().get_element<UIChatbar>())
+		if (auto chatbar = UI::get().get_element<UIChatBar>())
 			chatbar->send_chatline(message, linetype);
 	}
 
@@ -202,8 +249,8 @@ namespace ms
 
 		if (Stage::get().is_player(cid))
 		{
-			if (auto chatbar = UI::get().get_element<UIChatbar>())
-				chatbar->display_message(message, UIChatbar::LineType::RED);
+			if (auto chatbar = UI::get().get_element<UIChatBar>())
+				chatbar->display_message(message, UIChatBar::LineType::RED);
 
 			UI::get().enable();
 		}
@@ -231,8 +278,8 @@ namespace ms
 				std::string sign = (qty < 0) ? "-" : "+";
 				std::string message = "Gained an item: " + name + " (" + sign + std::to_string(qty) + ")";
 
-				if (auto chatbar = UI::get().get_element<UIChatbar>())
-					chatbar->send_chatline(message, UIChatbar::LineType::BLUE);
+				if (auto chatbar = UI::get().get_element<UIChatBar>())
+					chatbar->send_chatline(message, UIChatBar::LineType::BLUE);
 			}
 		}
 		else if (mode1 == 13) // card effect
@@ -252,7 +299,7 @@ namespace ms
 		{
 			int32_t skillid = recv.read_int();
 
-			// More bytes, but we don't need them
+			// More bytes, but we don't need them.
 			Stage::get().get_combat().show_player_buff(skillid);
 		}
 	}

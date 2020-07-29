@@ -19,7 +19,7 @@
 
 #include "Button.h"
 
-#include "../Template/BoolPair.h"
+#include "../../Template/BoolPair.h"
 
 namespace ms
 {
@@ -37,7 +37,6 @@ namespace ms
 		int16_t width() const;
 		Point<int16_t> origin() const;
 		Cursor::State send_cursor(bool, Point<int16_t>) { return Cursor::State::IDLE; }
-		bool remove_cursor(bool, Point<int16_t>) { return false; }
 
 	private:
 		BoolPair<Texture> textures;

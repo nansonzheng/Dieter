@@ -19,8 +19,9 @@
 
 #include "../UIDragElement.h"
 
-#include "../Template/BoolPair.h"
 #include "../Components/Textfield.h"
+
+#include "../../Template/BoolPair.h"
 
 namespace ms
 {
@@ -34,9 +35,10 @@ namespace ms
 		UIJoypad();
 
 		void draw(float inter) const override;
-		void update() override;
 
 		void send_key(int32_t keycode, bool pressed, bool escape) override;
+
+		UIElement::Type get_type() const override;
 
 	protected:
 		Button::State button_pressed(uint16_t buttonid) override;

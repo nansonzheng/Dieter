@@ -17,13 +17,15 @@
 //////////////////////////////////////////////////////////////////////////////////
 #include "Hair.h"
 
-#include "../Console.h"
+#include <iostream>
 
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
-	Hair::Hair(int32_t hairid, const BodyDrawinfo& drawinfo)
+	Hair::Hair(int32_t hairid, const BodyDrawInfo& drawinfo)
 	{
 		nl::node hairnode = nl::nx::character["Hair"]["000" + std::to_string(hairid) + ".img"];
 
@@ -46,7 +48,7 @@ namespace ms
 
 					if (layer_iter == layers_by_name.end())
 					{
-						Console::get().print("Warning: Unhandled hair layer (" + layername + ")");
+						std::cout << "Unknown Hair::Layer name: [" << layername << "]\tLocation: [" << hairnode.name() << "][" << stancename << "][" << frame << "]" << std::endl;
 						continue;
 					}
 
@@ -97,11 +99,13 @@ namespace ms
 
 	const std::unordered_map<std::string, Hair::Layer> Hair::layers_by_name =
 	{
-		{ "hair", Hair::Layer::DEFAULT },
-		{ "hairBelowBody", Hair::Layer::BELOWBODY },
-		{ "hairOverHead", Hair::Layer::OVERHEAD },
-		{ "hairShade", Hair::Layer::SHADE },
-		{ "backHair", Hair::Layer::BACK },
-		{ "backHairBelowCap", Hair::Layer::BELOWCAP }
+		{ "hair",					Hair::Layer::DEFAULT		},
+		{ "hairBelowBody",			Hair::Layer::BELOWBODY		},
+		{ "hairOverHead",			Hair::Layer::OVERHEAD		},
+		{ "hairShade",				Hair::Layer::SHADE			},
+		{ "backHair",				Hair::Layer::BACK			},
+		{ "backHairBelowCap",		Hair::Layer::BELOWCAP		},
+		{ "backHairBelowCapNarrow",	Hair::Layer::BELOWCAPNARROW },
+		{ "backHairBelowCapWide",	Hair::Layer::BELOWCAPWIDE	}
 	};
 }

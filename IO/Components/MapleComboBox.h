@@ -19,13 +19,13 @@
 
 #include "Button.h"
 
-#include "../Graphics/Geometry.h"
+#include "../../Graphics/Geometry.h"
 
 #include <memory>
 
 namespace ms
 {
-	// A standard maplestory-combobox with 4 states and three textures for each state.
+	// A standard MapleStory combo box with four states and three textures for each state
 	class MapleComboBox : public Button
 	{
 	public:
@@ -51,7 +51,6 @@ namespace ms
 		int16_t width() const override;
 		Point<int16_t> origin() const override;
 		Cursor::State send_cursor(bool clicked, Point<int16_t> cursorpos) override;
-		bool remove_cursor(bool clicked, Point<int16_t> cursorpos) override;
 		bool in_combobox(Point<int16_t> cursorpos) override;
 		uint16_t get_selected() const override;
 

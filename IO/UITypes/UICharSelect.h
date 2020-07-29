@@ -20,13 +20,13 @@
 #include "../UIElement.h"
 
 #include "../Components/Charset.h"
-#include "../Components/Nametag.h"
+#include "../Components/NameTag.h"
 
-#include "../Character/Look/CharLook.h"
+#include "../../Character/Look/CharLook.h"
 
 namespace ms
 {
-	// The character selection screen.
+	// The character selection screen
 	class UICharSelect : public UIElement
 	{
 	public:
@@ -42,6 +42,8 @@ namespace ms
 		void doubleclick(Point<int16_t> cursorpos) override;
 		Cursor::State send_cursor(bool clicked, Point<int16_t> cursorpos) override;
 		void send_key(int32_t keycode, bool pressed, bool escape) override;
+
+		UIElement::Type get_type() const override;
 
 		void add_character(CharEntry&& character);
 		void post_add_character();
@@ -62,7 +64,6 @@ namespace ms
 		Point<int16_t> get_infolabel_pos(size_t index) const;
 		std::string get_infolabel(size_t index, StatsEntry character_stats) const;
 		void request_pic();
-		void check_pic(const std::string entered_pic) const;
 
 		static constexpr uint8_t PAGESIZE = 8;
 
@@ -112,11 +113,11 @@ namespace ms
 		Charset levelset;
 		OutlinedText namelabel;
 		std::vector<CharLook> charlooks;
-		std::vector<Nametag> nametags;
+		std::vector<NameTag> nametags;
 		Animation emptyslot_effect;
 		Texture emptyslot;
 		Animation selectedslot_effect[2];
-		OutlinedText chatslotlabel;
+		OutlinedText charslotlabel;
 		int16_t timestamp;
 		uint16_t charslot_y;
 		bool show_timestamp;

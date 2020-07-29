@@ -22,11 +22,13 @@
 #include "../Components/MapleButton.h"
 #include "../Components/TwoSpriteButton.h"
 
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
-	UIOptionMenu::UIOptionMenu() : UIDragElement<PosOPTIONMENU>(Point<int16_t>()), selected_tab(0)
+	UIOptionMenu::UIOptionMenu() : UIDragElement<PosOPTIONMENU>(), selected_tab(0)
 	{
 		nl::node OptionMenu = nl::nx::ui["StatusBar3.img"]["OptionMenu"];
 		nl::node backgrnd = OptionMenu["backgrnd"];
@@ -205,26 +207,25 @@ namespace ms
 		}
 	}
 
-	bool UIOptionMenu::remove_cursor(bool clicked, Point<int16_t> cursorpos)
-	{
-		if (buttons[Buttons::SELECT_RES]->remove_cursor(clicked, cursorpos))
-			return true;
-
-		return false;
-	}
-
 	Cursor::State UIOptionMenu::send_cursor(bool clicked, Point<int16_t> cursorpos)
 	{
-		if (buttons[Buttons::SELECT_RES]->is_pressed())
+		Cursor::State dstate = UIDragElement::send_cursor(clicked, cursorpos);
+
+		if (dragged)
+			return dstate;
+
+		auto& button = buttons[Buttons::SELECT_RES];
+
+		if (button->is_pressed())
 		{
-			if (buttons[Buttons::SELECT_RES]->in_combobox(cursorpos))
+			if (button->in_combobox(cursorpos))
 			{
-				if (Cursor::State new_state = buttons[Buttons::SELECT_RES]->send_cursor(clicked, cursorpos))
+				if (Cursor::State new_state = button->send_cursor(clicked, cursorpos))
 					return new_state;
 			}
 			else
 			{
-				remove_cursor(clicked, cursorpos);
+				remove_cursor();
 			}
 		}
 
@@ -240,6 +241,11 @@ namespace ms
 			else if (keycode == KeyAction::Id::RETURN)
 				button_pressed(Buttons::OK);
 		}
+	}
+
+	UIElement::Type UIOptionMenu::get_type() const
+	{
+		return TYPE;
 	}
 
 	void UIOptionMenu::change_tab(uint16_t tabid)

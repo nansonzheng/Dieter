@@ -17,9 +17,8 @@
 //////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include "../Template/EnumMap.h"
+#include "../../Template/EnumMap.h"
 
-#include <cstdint>
 #include <string>
 
 namespace ms

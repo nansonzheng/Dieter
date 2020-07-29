@@ -15,24 +15,18 @@
 //	You should have received a copy of the GNU Affero General Public License	//
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.		//
 //////////////////////////////////////////////////////////////////////////////////
-#include "Configuration.h"
-#include "Constants.h"
-#include "Error.h"
-#include "Timer.h"
-
-#include "Audio/Audio.h"
-#include "Character/Char.h"
 #include "Gameplay/Stage.h"
 #include "IO/UI.h"
 #include "IO/Window.h"
 #include "Net/Session.h"
-#include "Util/NxFiles.h"
 #include "Util/HardwareInfo.h"
 #include "Util/ScreenResolution.h"
 
-#include "Gameplay/Combat/DamageNumber.h"
-
-#include <iostream>
+#ifdef USE_NX
+#include "Util/NxFiles.h"
+#else
+#include "Util/WzFiles.h"
+#endif
 
 namespace ms
 {
@@ -41,8 +35,13 @@ namespace ms
 		if (Error error = Session::get().init())
 			return error;
 
+#ifdef USE_NX
 		if (Error error = NxFiles::init())
 			return error;
+#else
+		if (Error error = WzFiles::init())
+			return error;
+#endif
 
 		if (Error error = Window::get().init())
 			return error;
@@ -89,6 +88,7 @@ namespace ms
 	void loop()
 	{
 		Timer::get().start();
+
 		int64_t timestep = Constants::TIMESTEP * 1000;
 		int64_t accumulator = timestep;
 
@@ -119,6 +119,7 @@ namespace ms
 				else if (period)
 				{
 					int64_t fps = (samples * 1000000) / period;
+
 					std::cout << "FPS: " << fps << std::endl;
 
 					period = 0;
@@ -132,14 +133,20 @@ namespace ms
 
 	void start()
 	{
-		// Initialize and check for errors.
+		// Initialize and check for errors
 		if (Error error = init())
 		{
 			const char* message = error.get_message();
 			const char* args = error.get_args();
 			bool can_retry = error.can_retry();
 
-			std::cout << "Error: " << message << args << std::endl;
+			std::cout << "Error: " << message << std::endl;
+
+			if (args && args[0])
+				std::cout << "Message: " << args << std::endl;
+
+			if (can_retry)
+				std::cout << "Enter 'retry' to try again." << std::endl;
 
 			std::string command;
 			std::cin >> command;

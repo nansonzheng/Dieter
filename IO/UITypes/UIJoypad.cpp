@@ -19,12 +19,14 @@
 
 #include "../Components/MapleButton.h"
 
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
 	// TODO: Add combo boxes nl::nx::ui["Basic.img"]["ComboBox"] / ["ComboBox5"];
-	UIJoypad::UIJoypad() : UIDragElement<PosJOYPAD>(Point<int16_t>())
+	UIJoypad::UIJoypad() : UIDragElement<PosJOYPAD>()
 	{
 		alternative_settings = false; // TODO: Get user's key settings type
 
@@ -65,11 +67,6 @@ namespace ms
 		UIElement::draw(inter);
 	}
 
-	void UIJoypad::update()
-	{
-		UIElement::update();
-	}
-
 	void UIJoypad::send_key(int32_t keycode, bool pressed, bool escape)
 	{
 		if (pressed)
@@ -79,6 +76,11 @@ namespace ms
 			else if (keycode == KeyAction::Id::RETURN)
 				save();
 		}
+	}
+
+	UIElement::Type UIJoypad::get_type() const
+	{
+		return TYPE;
 	}
 
 	Button::State UIJoypad::button_pressed(uint16_t buttonid)
@@ -102,7 +104,7 @@ namespace ms
 
 	void UIJoypad::cancel()
 	{
-		active = false;
+		deactivate();
 	}
 
 	void UIJoypad::save()

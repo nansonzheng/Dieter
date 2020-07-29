@@ -2,10 +2,15 @@
 /x64
 /wz
 /NoLifeStory
+/x86
 
-*.nx
 *.aps
 *.log
 *.tlog
+*.vcxproj.user
 
+*.nx
+*.wz
 Settings
+
+/includes/WzLib

@@ -20,11 +20,12 @@
 #include "../UIElement.h"
 
 #include "../Components/Textfield.h"
-#include "../Template/BoolPair.h"
+
+#include "../../Template/BoolPair.h"
 
 namespace ms
 {
-	// Race selection screen.
+	// Race selection screen
 	class UIRaceSelect : public UIElement
 	{
 	public:
@@ -40,6 +41,8 @@ namespace ms
 		Cursor::State send_cursor(bool clicked, Point<int16_t> cursorpos) override;
 		void send_key(int32_t keycode, bool pressed, bool escape) override;
 
+		UIElement::Type get_type() const override;
+
 		bool check_name(std::string name) const;
 		void send_naming_result(bool nameused);
 
@@ -47,13 +50,14 @@ namespace ms
 		Button::State button_pressed(uint16_t buttonid) override;
 
 	private:
-		void select_class(uint8_t index);
+		void select_class(uint16_t index);
 		void show_charselect();
 		Point<int16_t> get_class_pos(size_t index) const;
 		std::string to_lower(std::string value) const;
+		uint16_t get_corrected_class_index(uint16_t index) const;
 
-		static constexpr uint8_t INDEX_COUNT = 5;
-		static constexpr uint8_t CLASS_COUNT = 26;
+		static constexpr uint16_t INDEX_COUNT = 5;
+		static constexpr uint16_t SELECTED_LIST = 33;
 
 		enum Buttons : uint16_t
 		{
@@ -68,7 +72,7 @@ namespace ms
 			CLASS4
 		};
 
-		enum Classes : uint8_t
+		enum Classes : uint16_t
 		{
 			RESISTANCE,
 			EXPLORER,
@@ -87,19 +91,20 @@ namespace ms
 			XENON,
 			ZERO,
 			SHADE,
-			JETT,
-			HAYATO,
-			KANNA,
-			CHASE,
 			PINKBEAN,
 			KINESIS,
 			CADENA,
 			ILLIUM,
 			ARK,
+			PATHFINDER,
+			HOYOUNG,
+			JETT,
+			HAYATO,
+			KANNA,
+			CHASE
 		};
 
 		Text version;
-		Point<int16_t> screen_adj;
 		Point<int16_t> pos;
 		Point<int16_t> posZero;
 		nl::node order;
@@ -111,17 +116,19 @@ namespace ms
 		Sprite newlabel;
 		Sprite hotbtn;
 		Sprite newbtn;
-		uint8_t class_index[INDEX_COUNT];
+		uint16_t class_index[INDEX_COUNT];
 		bool mouseover[INDEX_COUNT];
-		uint8_t selected_class;
-		uint8_t index_shift;
+		uint16_t selected_class;
+		uint16_t index_shift;
 		uint16_t selected_index;
-		bool class_isdisabled[CLASS_COUNT];
-		BoolPair<Texture> class_disabled[CLASS_COUNT];
-		BoolPair<Texture> class_normal[CLASS_COUNT];
-		Texture class_background[CLASS_COUNT];
-		Texture class_details[CLASS_COUNT];
-		Texture class_title[CLASS_COUNT];
+		uint16_t class_count;
+		std::vector<bool> class_isdisabled;
+		std::vector<BoolPair<Texture>> class_disabled;
+		std::vector<BoolPair<Texture>> class_normal;
+		std::vector<Texture> class_background;
+		std::vector<Texture> class_details;
+		std::vector<Texture> class_title;
+		std::vector<uint16_t> class_map;
 		Texture back;
 		Texture backZero;
 		Sprite back_ani;

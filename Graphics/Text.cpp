@@ -16,6 +16,7 @@
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.		//
 //////////////////////////////////////////////////////////////////////////////////
 #include "Text.h"
+
 #include "GraphicsGL.h"
 
 namespace ms
@@ -63,7 +64,12 @@ namespace ms
 
 	void Text::draw(const DrawArgument& args) const
 	{
-		GraphicsGL::get().drawtext(args, text, layout, font, color, background);
+		draw(args, Range<int16_t>(0, 0));
+	}
+
+	void Text::draw(const DrawArgument& args, const Range<int16_t>& vertical) const
+	{
+		GraphicsGL::get().drawtext(args, vertical, text, layout, font, color, background);
 	}
 
 	uint16_t Text::advance(size_t pos) const

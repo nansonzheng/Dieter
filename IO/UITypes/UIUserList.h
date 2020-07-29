@@ -19,8 +19,8 @@
 
 #include "../UIDragElement.h"
 
-#include "../Components/Textfield.h"
 #include "../Components/Slider.h"
+#include "../Components/Textfield.h"
 
 namespace ms
 {
@@ -37,6 +37,8 @@ namespace ms
 		void update() override;
 
 		void send_key(int32_t keycode, bool pressed, bool escape) override;
+
+		UIElement::Type get_type() const override;
 
 		enum Tab
 		{

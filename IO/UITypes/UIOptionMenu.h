@@ -18,6 +18,7 @@
 #pragma once
 
 #include "../UIDragElement.h"
+
 #include "../Components/MapleComboBox.h"
 
 namespace ms
@@ -33,11 +34,13 @@ namespace ms
 
 		void draw(float inter) const override;
 
-		Button::State button_pressed(uint16_t buttonid) override;
-
-		bool remove_cursor(bool clicked, Point<int16_t> cursorpos) override;
 		Cursor::State send_cursor(bool clicked, Point<int16_t> cursorpos) override;
 		void send_key(int32_t keycode, bool pressed, bool escape) override;
+
+		UIElement::Type get_type() const override;
+
+	protected:
+		Button::State button_pressed(uint16_t buttonid) override;
 
 	private:
 		void change_tab(uint16_t tabid);

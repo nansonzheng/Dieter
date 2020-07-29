@@ -16,27 +16,25 @@
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.		//
 //////////////////////////////////////////////////////////////////////////////////
 #include "UITermsOfService.h"
-#include "UILoginwait.h"
+
+#include "UILoginWait.h"
 
 #include "../UI.h"
 
 #include "../Components/MapleButton.h"
 
-#include "../Net/Packets/LoginPackets.h"
+#include "../../Net/Packets/LoginPackets.h"
 
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
-	UITermsOfService::UITermsOfService(std::function<void()> oh) : UIElement(), okhandler(oh)
+	UITermsOfService::UITermsOfService(std::function<void()> oh) : okhandler(oh), offset(0), unit_rows(1)
 	{
-		offset = 0;
-		unit_rows = 1;
-
 		nl::node Login = nl::nx::ui["Login.img"];
 		nl::node TOS = Login["TOS"];
-
-		Point<int16_t> TOS_dimensions = Texture(TOS).get_dimensions();
 
 		sprites.emplace_back(TOS, Point<int16_t>(399, 250));
 
@@ -1062,12 +1060,12 @@ namespace ms
 #pragma endregion
 
 		text = Text(Text::Font::A11M, Text::Alignment::LEFT, Color::Name::BLACK, EULA, 340, true, 2);
-		max_rows = std::floor(text.height() / 50) - 5;
+		max_rows = text.height() / 300 + 1;
 
 		int16_t slider_y = 77;
 
 		slider = Slider(
-			Slider::Type::GOLD, Range<int16_t>(slider_y, slider_y + 305), 574, unit_rows, max_rows,
+			Slider::Type::LINE_PUNGA, Range<int16_t>(slider_y, slider_y + 305), 574, unit_rows, max_rows,
 			[&](bool upwards)
 			{
 				int16_t shift = upwards ? -1 : 1;
@@ -1084,30 +1082,17 @@ namespace ms
 
 		update_accept(offset);
 
-		position = Point<int16_t>(0, 0);
-		dimension = TOS_dimensions;
-		active = true;
+		position = Point<int16_t>(0, 10);
+		dimension = Texture(TOS).get_dimensions();
 	}
 
 	void UITermsOfService::draw(float inter) const
 	{
 		UIElement::draw(inter);
 
-		text.draw(position + Point<int16_t>(226, 84 - offset * 50));
+		int16_t range_min = 80;
+		text.draw(position + Point<int16_t>(226, 84 - offset * 300), Range<int16_t>(range_min, range_min + 316));
 		slider.draw(position);
-	}
-
-	void UITermsOfService::update()
-	{
-		UIElement::update();
-	}
-
-	bool UITermsOfService::remove_cursor(bool clicked, Point<int16_t> cursorpos)
-	{
-		if (slider.remove_cursor(clicked))
-			return true;
-
-		return UIElement::remove_cursor(clicked, cursorpos);
 	}
 
 	Cursor::State UITermsOfService::send_cursor(bool clicked, Point<int16_t> cursorpos)
@@ -1125,12 +1110,17 @@ namespace ms
 		return UIElement::send_cursor(clicked, cursorpos);
 	}
 
+	UIElement::Type UITermsOfService::get_type() const
+	{
+		return TYPE;
+	}
+
 	Button::State UITermsOfService::button_pressed(uint16_t buttonid)
 	{
 		switch (buttonid)
 		{
 		case Buttons::OK:
-			UI::get().emplace<UILoginwait>();
+			UI::get().emplace<UILoginWait>();
 
 			TOSPacket().dispatch();
 			break;

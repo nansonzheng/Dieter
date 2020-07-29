@@ -17,8 +17,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 #include "ItemData.h"
 
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
-#include <nlnx/node.hpp>
+#endif
 
 namespace ms
 {

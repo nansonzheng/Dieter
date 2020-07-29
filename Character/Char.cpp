@@ -19,11 +19,13 @@
 
 #include "../Data/WeaponData.h"
 
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
-	Char::Char(int32_t o, const CharLook& lk, const std::string& name) : MapObject(o), look(lk), namelabel(Text(Text::Font::A13M, Text::Alignment::CENTER, Color::Name::WHITE, Text::Background::NAMETAG, name)) {}
+	Char::Char(int32_t o, const CharLook& lk, const std::string& name) : MapObject(o), look(lk), look_preview(lk), namelabel(Text(Text::Font::A13M, Text::Alignment::CENTER, Color::Name::WHITE, Text::Background::NAMETAG, name)) {}
 
 	void Char::draw(double viewx, double viewy, float alpha) const
 	{
@@ -47,7 +49,7 @@ namespace ms
 
 		look.draw(DrawArgument(absp, color), alpha);
 
-		afterimage.draw(look.get_frame(), DrawArgument(absp, flip), alpha);
+		afterimage.draw(look.get_frame(), DrawArgument(absp, facing_right), alpha);
 
 		if (ironbody)
 		{
@@ -62,13 +64,19 @@ namespace ms
 			if (pet.get_itemid())
 				pet.draw(viewx, viewy, alpha);
 
-		namelabel.draw(absp);
+		// If ever changing code for namelabel confirm placements with map 10000
+		namelabel.draw(absp + Point<int16_t>(0, -4));
 		chatballoon.draw(absp - Point<int16_t>(0, 85));
 
 		effects.drawabove(absp, alpha);
 
 		for (auto& number : damagenumbers)
 			number.draw(viewx, viewy, alpha);
+	}
+
+	void Char::draw_preview(Point<int16_t> position, float alpha) const
+	{
+		look_preview.draw(position, false, Stance::Id::STAND1, Expression::Id::DEFAULT);
 	}
 
 	bool Char::update(const Physics& physics, float speed)
@@ -168,7 +176,7 @@ namespace ms
 	{
 		float attackspeed = get_real_attackspeed();
 
-		effects.add(toshow, DrawArgument(flip), z, attackspeed);
+		effects.add(toshow, DrawArgument(facing_right), z, attackspeed);
 	}
 
 	void Char::show_effect_id(CharEffect::Id toshow)
@@ -197,17 +205,17 @@ namespace ms
 		chatballoon.change_text(line);
 	}
 
-	void Char::change_look(Maplestat::Id stat, int32_t id)
+	void Char::change_look(MapleStat::Id stat, int32_t id)
 	{
 		switch (stat)
 		{
-		case Maplestat::Id::SKIN:
+		case MapleStat::Id::SKIN:
 			look.set_body(id);
 			break;
-		case Maplestat::Id::FACE:
+		case MapleStat::Id::FACE:
 			look.set_face(id);
 			break;
-		case Maplestat::Id::HAIR:
+		case MapleStat::Id::HAIR:
 			look.set_hair(id);
 			break;
 		}
@@ -270,7 +278,7 @@ namespace ms
 		const WeaponData& weapon = WeaponData::get(weapon_id);
 
 		std::string stance_name = Stance::names[look.get_stance()];
-		int16_t weapon_level = weapon.get_equipdata().get_reqstat(Maplestat::Id::LEVEL);
+		int16_t weapon_level = weapon.get_equipdata().get_reqstat(MapleStat::Id::LEVEL);
 		const std::string& ai_name = weapon.get_afterimage();
 
 		afterimage = Afterimage(skill_id, ai_name, stance_name, weapon_level);
@@ -283,7 +291,7 @@ namespace ms
 
 	void Char::set_direction(bool f)
 	{
-		flip = f;
+		facing_right = f;
 		look.set_direction(f);
 	}
 
@@ -348,7 +356,7 @@ namespace ms
 
 	bool Char::getflip() const
 	{
-		return flip;
+		return facing_right;
 	}
 
 	std::string Char::get_name() const

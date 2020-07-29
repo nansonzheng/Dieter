@@ -17,18 +17,10 @@
 //////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include "Cursor.h"
-#include "Keyboard.h"
 #include "UIState.h"
 
-#include "Components/Icon.h"
-#include "Components/Textfield.h"
 #include "Components/ScrollingNotice.h"
-
-#include "../Template/Singleton.h"
-#include "../Template/Optional.h"
-
-#include <unordered_map>
+#include "Components/Textfield.h"
 
 namespace ms
 {
@@ -38,7 +30,8 @@ namespace ms
 		enum State
 		{
 			LOGIN,
-			GAME
+			GAME,
+			CASHSHOP
 		};
 
 		UI();
@@ -76,16 +69,32 @@ namespace ms
 		void show_item(Tooltip::Parent parent, int32_t item_id);
 		void show_skill(Tooltip::Parent parent, int32_t skill_id, int32_t level, int32_t masterlevel, int64_t expiration);
 		void show_text(Tooltip::Parent parent, std::string text);
+		void show_map(Tooltip::Parent parent, std::string name, std::string description, int32_t mapid, bool bolded);
 
 		Keyboard& get_keyboard();
-		int64_t get_uptime();
-		uint16_t get_uplevel();
-		int64_t get_upexp();
 
 		template <class T, typename...Args>
-		Optional<T> emplace(Args&& ...args);
+		Optional<T> emplace(Args&& ...args)
+		{
+			if (auto iter = state->pre_add(T::TYPE, T::TOGGLED, T::FOCUSED))
+			{
+				(*iter).second = std::make_unique<T>(
+					std::forward<Args>(args)...
+					);
+			}
+
+			return state->get(T::TYPE);
+		}
+
 		template <class T>
-		Optional<T> get_element();
+		Optional<T> get_element()
+		{
+			UIElement::Type type = T::TYPE;
+			UIElement* element = state->get(type);
+
+			return static_cast<T*>(element);
+		}
+
 		void remove(UIElement::Type type);
 
 	private:
@@ -101,24 +110,4 @@ namespace ms
 		bool quitted;
 		bool caps_lock_enabled = false;
 	};
-
-	template <class T, typename...Args>
-	Optional<T> UI::emplace(Args&& ...args)
-	{
-		if (auto iter = state->pre_add(T::TYPE, T::TOGGLED, T::FOCUSED))
-		{
-			(*iter).second = std::make_unique<T>(
-				std::forward<Args>(args)...
-				);
-		}
-		return state->get(T::TYPE);
-	}
-
-	template <class T>
-	Optional<T> UI::get_element()
-	{
-		UIElement::Type type = T::TYPE;
-		UIElement* element = state->get(type);
-		return static_cast<T*>(element);
-	}
 }

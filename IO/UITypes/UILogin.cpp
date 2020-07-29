@@ -16,58 +16,78 @@
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.		//
 //////////////////////////////////////////////////////////////////////////////////
 #include "UILogin.h"
-#include "UILoginwait.h"
+
 #include "UILoginNotice.h"
+#include "UILoginWait.h"
 
 #include "../UI.h"
 
 #include "../Components/MapleButton.h"
-#include "../Audio/Audio.h"
 
-#include "../Net/Packets/LoginPackets.h"
+#include "../../Audio/Audio.h"
+
+#include "../../Net/Packets/LoginPackets.h"
 
 #include <windows.h>
 
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
-	UILogin::UILogin()
+	UILogin::UILogin() : UIElement(Point<int16_t>(0, 0), Point<int16_t>(800, 600)), signboard_pos(Point<int16_t>(389, 333))
 	{
-		Music("BgmUI.img/Title").play();
+		LoginStartPacket().dispatch();
+
+		std::string LoginMusicNewtro = Configuration::get().get_login_music_newtro();
+
+		Music(LoginMusicNewtro).play();
 
 		std::string version_text = Configuration::get().get_version();
-		version = Text(Text::Font::A11M, Text::Alignment::LEFT, Color::Name::LEMONGRASS, "Ver. " + version_text);
+		version = Text(Text::Font::A11B, Text::Alignment::LEFT, Color::Name::LEMONGRASS, "Ver. " + version_text);
 
-		nl::node map = nl::nx::map001["Back"]["login.img"];
-		nl::node back = map["back"];
-		nl::node ani = map["ani"];
+		nl::node map001 = nl::nx::map001["Back"]["login.img"];
+		nl::node back = map001["back"];
+		nl::node ani = map001["ani"];
 
-		nl::node obj = nl::nx::map["Obj"]["login.img"];
-		nl::node title = nl::nx::ui["Login.img"]["Title"];
-		nl::node common = nl::nx::ui["Login.img"]["Common"];
+		nl::node Login = nl::nx::ui["Login.img"];
+		nl::node Title = Login["Title"];
+		nl::node Common = Login["Common"];
 
-		sprites.emplace_back(back["11"], Point<int16_t>(400, 290));
-		sprites.emplace_back(ani["17"], Point<int16_t>(129, 273));
-		sprites.emplace_back(ani["18"], Point<int16_t>(306, 242));
-		sprites.emplace_back(ani["19"], Point<int16_t>(379, 197));
-		sprites.emplace_back(back["35"], Point<int16_t>(399, 250));
-		sprites.emplace_back(ani["16"], Point<int16_t>(394, 163)); // From v167
-		sprites.emplace_back(title["signboard"], Point<int16_t>(391, 320));
-		sprites.emplace_back(common["frame"], Point<int16_t>(399, 289));
+		nl::node prettyLogo = nl::nx::mapPretty["Back"]["login.img"]["ani"]["16"];
+		nl::node frame = nl::nx::mapLatest["Obj"]["login.img"]["Common"]["frame"]["2"]["0"];
 
-		buttons[Buttons::BT_LOGIN] = std::make_unique<MapleButton>(title["BtLogin"], Point<int16_t>(454, 269));
-		buttons[Buttons::BT_SAVEID] = std::make_unique<MapleButton>(title["BtLoginIDSave"], Point<int16_t>(303, 322));
-		buttons[Buttons::BT_IDLOST] = std::make_unique<MapleButton>(title["BtLoginIDLost"], Point<int16_t>(375, 322));
-		buttons[Buttons::BT_PASSLOST] = std::make_unique<MapleButton>(title["BtPasswdLost"], Point<int16_t>(447, 322));
-		buttons[Buttons::BT_REGISTER] = std::make_unique<MapleButton>(title["BtNew"], Point<int16_t>(291, 342));
-		buttons[Buttons::BT_HOMEPAGE] = std::make_unique<MapleButton>(title["BtHomePage"], Point<int16_t>(363, 342));
-		buttons[Buttons::BT_QUIT] = std::make_unique<MapleButton>(title["BtQuit"], Point<int16_t>(435, 342));
+		sprites.emplace_back(back["11"], Point<int16_t>(400, 300));
+		sprites.emplace_back(ani["17"], Point<int16_t>(165, 276));
+		sprites.emplace_back(ani["18"], Point<int16_t>(301, 245));
+		sprites.emplace_back(ani["19"], Point<int16_t>(374, 200));
+		sprites.emplace_back(ani["19"], Point<int16_t>(348, 161));
+		sprites.emplace_back(back["35"], Point<int16_t>(399, 260));
+		sprites.emplace_back(prettyLogo, Point<int16_t>(409, 144));
+		sprites.emplace_back(Title["signboard"], signboard_pos);
+		sprites.emplace_back(frame, Point<int16_t>(400, 300));
+		sprites.emplace_back(Common["frame"], Point<int16_t>(400, 300));
 
-		checkbox[false] = title["check"]["0"];
-		checkbox[true] = title["check"]["1"];
+		buttons[Buttons::BT_LOGIN] = std::make_unique<MapleButton>(Title["BtLogin"], signboard_pos + Point<int16_t>(62, -51));
+		buttons[Buttons::BT_SAVEID] = std::make_unique<MapleButton>(Title["BtLoginIDSave"], signboard_pos + Point<int16_t>(-89, 5));
+		buttons[Buttons::BT_IDLOST] = std::make_unique<MapleButton>(Title["BtLoginIDLost"], signboard_pos + Point<int16_t>(-17, 5));
+		buttons[Buttons::BT_PASSLOST] = std::make_unique<MapleButton>(Title["BtPasswdLost"], signboard_pos + Point<int16_t>(55, 5));
+		buttons[Buttons::BT_REGISTER] = std::make_unique<MapleButton>(Title["BtNew"], signboard_pos + Point<int16_t>(-101, 25));
+		buttons[Buttons::BT_HOMEPAGE] = std::make_unique<MapleButton>(Title["BtHomePage"], signboard_pos + Point<int16_t>(-29, 25));
+		buttons[Buttons::BT_QUIT] = std::make_unique<MapleButton>(Title["BtQuit"], signboard_pos + Point<int16_t>(43, 25));
 
-		account = Textfield(Text::Font::A13M, Text::Alignment::LEFT, Color::Name::WHITE, Rectangle<int16_t>(Point<int16_t>(296, 269), Point<int16_t>(446, 293)), 12);
+		checkbox[false] = Title["check"]["0"];
+		checkbox[true] = Title["check"]["1"];
+
+		background = ColorBox(dimension.x(), dimension.y(), Color::Name::BLACK, 1.0f);
+
+		Point<int16_t> textbox_pos = signboard_pos + Point<int16_t>(-96, -51);
+		Point<int16_t> textbox_dim = Point<int16_t>(150, 24);
+		int16_t textbox_limit = 12;
+
+#pragma region Account
+		account = Textfield(Text::Font::A13M, Text::Alignment::LEFT, Color::Name::JAMBALAYA, Color::Name::SMALT, 0.75f, Rectangle<int16_t>(textbox_pos, textbox_pos + textbox_dim), textbox_limit);
 
 		account.set_key_callback
 		(
@@ -86,9 +106,13 @@ namespace ms
 			}
 		);
 
-		accountbg = title["ID"];
+		accountbg = Title["ID"];
+#pragma endregion
 
-		password = Textfield(Text::Font::A13M, Text::Alignment::LEFT, Color::Name::WHITE, Rectangle<int16_t>(Point<int16_t>(296, 295), Point<int16_t>(446, 319)), 12);
+#pragma region Password
+		textbox_pos.shift_y(26);
+
+		password = Textfield(Text::Font::A13M, Text::Alignment::LEFT, Color::Name::JAMBALAYA, Color::Name::PRUSSIANBLUE, 0.85f, Rectangle<int16_t>(textbox_pos, textbox_pos + textbox_dim), textbox_limit);
 
 		password.set_key_callback
 		(
@@ -108,7 +132,8 @@ namespace ms
 		);
 
 		password.set_cryptchar('*');
-		passwordbg = title["PW"];
+		passwordbg = Title["PW"];
+#pragma endregion
 
 		saveid = Setting<SaveLogin>::get().load();
 
@@ -122,25 +147,37 @@ namespace ms
 			account.set_state(Textfield::State::FOCUSED);
 		}
 
-		position = Point<int16_t>(0, 0);
-		dimension = Point<int16_t>(800, 600);
+		if (Configuration::get().get_auto_login())
+		{
+			UI::get().emplace<UILoginWait>([]() {});
+
+			auto loginwait = UI::get().get_element<UILoginWait>();
+
+			if (loginwait && loginwait->is_active())
+				LoginPacket(
+					Configuration::get().get_auto_acc(),
+					Configuration::get().get_auto_pass()
+				).dispatch();
+		}
 	}
 
 	void UILogin::draw(float alpha) const
 	{
+		background.draw(position + Point<int16_t>(0, 7));
+
 		UIElement::draw(alpha);
 
-		version.draw(position + Point<int16_t>(707, -9));
-		account.draw(position);
-		password.draw(position);
+		version.draw(position + Point<int16_t>(707, 4));
+		account.draw(position + Point<int16_t>(1, 0));
+		password.draw(position + Point<int16_t>(1, 3));
 
 		if (account.get_state() == Textfield::State::NORMAL && account.empty())
-			accountbg.draw(DrawArgument(position + Point<int16_t>(291, 269)));
+			accountbg.draw(position + signboard_pos + Point<int16_t>(-101, -51));
 
 		if (password.get_state() == Textfield::State::NORMAL && password.empty())
-			passwordbg.draw(DrawArgument(position + Point<int16_t>(291, 295)));
+			passwordbg.draw(position + signboard_pos + Point<int16_t>(-101, -25));
 
-		checkbox[saveid].draw(DrawArgument(position + Point<int16_t>(291, 325)));
+		checkbox[saveid].draw(position + signboard_pos + Point<int16_t>(-101, 7));
 	}
 
 	void UILogin::update()
@@ -182,9 +219,9 @@ namespace ms
 			return;
 		}
 
-		UI::get().emplace<UILoginwait>(okhandler);
+		UI::get().emplace<UILoginWait>(okhandler);
 
-		auto loginwait = UI::get().get_element<UILoginwait>();
+		auto loginwait = UI::get().get_element<UILoginWait>();
 
 		if (loginwait && loginwait->is_active())
 			LoginPacket(account_text, password_text).dispatch();
@@ -196,51 +233,62 @@ namespace ms
 
 		switch (id)
 		{
-		case Buttons::BT_REGISTER:
-			url = Configuration::get().get_joinlink();
-			break;
-		case Buttons::BT_HOMEPAGE:
-			url = Configuration::get().get_website();
-			break;
-		case Buttons::BT_PASSLOST:
-			url = Configuration::get().get_findpass();
-			break;
-		case Buttons::BT_IDLOST:
-			url = Configuration::get().get_findid();
-			break;
-		default:
-			return;
+			case Buttons::BT_REGISTER:
+				url = Configuration::get().get_joinlink();
+				break;
+			case Buttons::BT_HOMEPAGE:
+				url = Configuration::get().get_website();
+				break;
+			case Buttons::BT_PASSLOST:
+				url = Configuration::get().get_findpass();
+				break;
+			case Buttons::BT_IDLOST:
+				url = Configuration::get().get_findid();
+				break;
+			default:
+				return;
 		}
 
-		ShellExecute(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+		ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
 	}
 
 	Button::State UILogin::button_pressed(uint16_t id)
 	{
 		switch (id)
 		{
-		case Buttons::BT_LOGIN:
-			login();
+			case Buttons::BT_LOGIN:
+			{
+				login();
 
-			return Button::State::NORMAL;
-		case Buttons::BT_REGISTER:
-		case Buttons::BT_HOMEPAGE:
-		case Buttons::BT_PASSLOST:
-		case Buttons::BT_IDLOST:
-			open_url(id);
+				return Button::State::NORMAL;
+			}
+			case Buttons::BT_REGISTER:
+			case Buttons::BT_HOMEPAGE:
+			case Buttons::BT_PASSLOST:
+			case Buttons::BT_IDLOST:
+			{
+				open_url(id);
 
-			return Button::State::NORMAL;
-		case Buttons::BT_SAVEID:
-			saveid = !saveid;
-			Setting<SaveLogin>::get().save(saveid);
+				return Button::State::NORMAL;
+			}
+			case Buttons::BT_SAVEID:
+			{
+				saveid = !saveid;
 
-			return Button::State::MOUSEOVER;
-		case Buttons::BT_QUIT:
-			UI::get().quit();
+				Setting<SaveLogin>::get().save(saveid);
 
-			return Button::State::PRESSED;
-		default:
-			return Button::State::NORMAL;
+				return Button::State::MOUSEOVER;
+			}
+			case Buttons::BT_QUIT:
+			{
+				UI::get().quit();
+
+				return Button::State::PRESSED;
+			}
+			default:
+			{
+				return Button::State::DISABLED;
+			}
 		}
 	}
 
@@ -253,5 +301,10 @@ namespace ms
 			return new_state;
 
 		return UIElement::send_cursor(clicked, cursorpos);
+	}
+
+	UIElement::Type UILogin::get_type() const
+	{
+		return TYPE;
 	}
 }

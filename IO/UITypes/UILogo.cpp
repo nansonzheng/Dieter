@@ -16,17 +16,20 @@
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.		//
 //////////////////////////////////////////////////////////////////////////////////
 #include "UILogo.h"
+
 #include "UILogin.h"
 
-#include "../Configuration.h"
+#include "../../Configuration.h"
 
-#include "../Audio/Audio.h"
+#include "../../Audio/Audio.h"
 
+#ifdef USE_NX
 #include <nlnx/nx.hpp>
+#endif
 
 namespace ms
 {
-	UILogo::UILogo()
+	UILogo::UILogo() : UIElement(Point<int16_t>(0, 0), Point<int16_t>(800, 600))
 	{
 		Music("BgmUI.img/NxLogo").play_once();
 
@@ -39,39 +42,32 @@ namespace ms
 		Nexon = Logo["Nexon"];
 		Wizet = Logo["Wizet"];
 		WizetEnd = Logo["Wizet"]["40"];
-
-		position = Point<int16_t>(0, 0);
-		dimension = Point<int16_t>(800, 600);
 	}
 
 	void UILogo::draw(float inter) const
 	{
-		UIElement::draw(inter);
-
 		if (!user_clicked)
 		{
 			if (!nexon_ended)
 			{
-				Nexon.draw(position + Point<int16_t>(440, 350), inter);
+				Nexon.draw(position + Point<int16_t>(440, 360), inter);
 			}
 			else
 			{
 				if (!wizet_ended)
-					Wizet.draw(position + Point<int16_t>(263, 185), inter);
+					Wizet.draw(position + Point<int16_t>(263, 195), inter);
 				else
-					WizetEnd.draw(position + Point<int16_t>(263, 185));
+					WizetEnd.draw(position + Point<int16_t>(263, 195));
 			}
 		}
 		else
 		{
-			WizetEnd.draw(position + Point<int16_t>(263, 185));
+			WizetEnd.draw(position + Point<int16_t>(263, 195));
 		}
 	}
 
 	void UILogo::update()
 	{
-		UIElement::update();
-
 		if (!nexon_ended)
 		{
 			nexon_ended = Nexon.update();
@@ -100,5 +96,10 @@ namespace ms
 			user_clicked = true;
 
 		return ret;
+	}
+
+	UIElement::Type UILogo::get_type() const
+	{
+		return TYPE;
 	}
 }
