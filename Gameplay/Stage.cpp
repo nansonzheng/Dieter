@@ -328,6 +328,11 @@ namespace ms
 		return combat;
 	}
 
+	std::map<int32_t, Party>& Stage::get_parties() 
+	{
+		return parties;
+	}
+
 	Optional<Char> Stage::get_character(int32_t cid)
 	{
 		if (is_player(cid))

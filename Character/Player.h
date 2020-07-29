@@ -29,8 +29,10 @@
 #include "../Gameplay/Playable.h"
 
 #include "../Gameplay/Combat/Skill.h"
-#include "../Gameplay/MapleMap/Layer.h"
-#include "../Gameplay/MapleMap/MapInfo.h"
+#include "../Gameplay/Maplemap/Layer.h"
+#include "../Gameplay/Maplemap/MapInfo.h"
+#include "../Gameplay/Party/Party.h"
+#include "../Gameplay/Physics/Physics.h"
 
 namespace ms
 {
@@ -129,6 +131,9 @@ namespace ms
 		// Checks if the player can climb
 		bool can_climb();
 
+		// Sets the player's party id
+		void set_party_id(int32_t pid);
+
 		// Obtain a reference to the player's stats
 		CharStats& get_stats();
 		// Obtain a reference to the player's stats
@@ -145,6 +150,8 @@ namespace ms
 		TeleportRock& get_teleportrock();
 		// Obtain a reference to the player's MonsterBook
 		MonsterBook& get_monsterbook();
+		// Returns a reference to the party object
+		const int32_t get_party_id() const;
 
 	private:
 		CharStats stats;
@@ -153,6 +160,7 @@ namespace ms
 		QuestLog questlog;
 		TeleportRock teleportrock;
 		MonsterBook monsterbook;
+		int32_t party_id;
 
 		EnumMap<Buffstat::Id, Buff> buffs;
 		ActiveBuffs active_buffs;

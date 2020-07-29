@@ -470,6 +470,11 @@ namespace ms
 		PosCHARINFO() : PointEntry("PosCHARINFO", "(264, 264)") {}
 	};
 
+	struct PosPARTYINVITE : public Configuration::PointEntry
+	{
+		PosPARTYINVITE() : PointEntry("PosPARTYINVITE", "(368, 104)") {}
+	};
+
 	// The default type of UIMiniMap
 	struct MiniMapType : public Configuration::ByteEntry
 	{
@@ -487,6 +492,7 @@ namespace ms
 	{
 		MiniMapDefaultHelpers() : BoolEntry("MiniMapDefaultHelpers", "false") {}
 	};
+
 
 	template <typename T>
 	// Can be used to access settings

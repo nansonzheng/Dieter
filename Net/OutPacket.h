@@ -90,6 +90,7 @@ namespace ms
 
 			/// Gameplay 2
 			PARTY_OPERATION = 124,
+			DENY_PARTY_REQUEST = 125, 
 			ADMIN_COMMAND = 128,
 			MOVE_MONSTER = 188,
 			PICKUP_ITEM = 202,

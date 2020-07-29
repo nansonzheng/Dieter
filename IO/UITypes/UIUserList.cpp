@@ -17,11 +17,26 @@
 //////////////////////////////////////////////////////////////////////////////////
 #include "UIUserList.h"
 
+#include "UINotice.h"
+
+#include "UIPartyInvite.h"
+
+#include "../UI.h"
+
+#include "../../Character/Player.h"
+#include "../../Character/Job.h"
+
 #include "../../IO/Components/MapleButton.h"
+
+#include "../../Gameplay/Stage.h"
+
+#include "../../Net/Packets/PartyPackets.h"
 
 #ifdef USE_NX
 #include <nlnx/nx.hpp>
 #endif
+
+#define USE_NOTICE_INVITE
 
 namespace ms
 {
@@ -44,24 +59,24 @@ namespace ms
 		buttons[Buttons::BT_TAB_BLACKLIST] = std::make_unique<TwoSpriteButton>(tabdis["3"], taben["3"]);
 
 		// Party Tab
-		nl::node Party = Main["Party"];
-		nl::node PartySearch = Party["PartySearch"];
+		nl::node party_node = Main["Party"];
+		nl::node PartySearch = party_node["PartySearch"];
 
 		party_tab = Tab::PARTY_MINE;
-		party_title = Party["title"];
+		party_title = party_node["title"];
 
 		for (size_t i = 0; i <= 4; i++)
 			party_mine_grid[i] = UserList["Sheet2"][i];
 
 		party_mine_name = Text(Text::Font::A12M, Text::Alignment::LEFT, Color::Name::BLACK, "none", 0);
 
-		nl::node party_taben = Party["Tab"]["enabled"];
-		nl::node party_tabdis = Party["Tab"]["disabled"];
+		nl::node party_taben = party_node["Tab"]["enabled"];
+		nl::node party_tabdis = party_node["Tab"]["disabled"];
 
-		buttons[Buttons::BT_PARTY_CREATE] = std::make_unique<MapleButton>(Party["BtPartyMake"]);
-		buttons[Buttons::BT_PARTY_INVITE] = std::make_unique<MapleButton>(Party["BtPartyInvite"]);
-		buttons[Buttons::BT_PARTY_LEAVE] = std::make_unique<MapleButton>(Party["BtPartyOut"]);
-		buttons[Buttons::BT_PARTY_SETTINGS] = std::make_unique<MapleButton>(Party["BtPartySettings"]);
+		buttons[Buttons::BT_PARTY_CREATE] = std::make_unique<MapleButton>(party_node["BtPartyMake"]);
+		buttons[Buttons::BT_PARTY_INVITE] = std::make_unique<MapleButton>(party_node["BtPartyInvite"]);
+		buttons[Buttons::BT_PARTY_LEAVE] = std::make_unique<MapleButton>(party_node["BtPartyOut"]);
+		buttons[Buttons::BT_PARTY_SETTINGS] = std::make_unique<MapleButton>(party_node["BtPartySettings"]);
 		buttons[Buttons::BT_PARTY_CREATE]->set_active(false);
 		buttons[Buttons::BT_PARTY_INVITE]->set_active(false);
 		buttons[Buttons::BT_PARTY_LEAVE]->set_active(false);
@@ -85,6 +100,14 @@ namespace ms
 		int16_t party_unitrows = 6;
 		int16_t party_rowmax = 6;
 		party_slider = Slider(Slider::Type::DEFAULT_SILVER, Range<int16_t>(party_y, party_height), party_x, party_unitrows, party_rowmax, [](bool) {});
+
+		party = Optional<Party>();
+		int32_t pid = Stage::get().get_player().get_party_id();
+		if (pid != 0)
+		{
+			party = Stage::get().get_parties()[pid];
+			update_party(party);
+		}
 
 		// Buddy Tab
 		nl::node Friend = Main["Friend"];
@@ -194,8 +217,30 @@ namespace ms
 			if (party_tab == Buttons::BT_TAB_PARTY_MINE)
 			{
 				party_mine_grid[0].draw(position + Point<int16_t>(10, 115));
-				party_mine_grid[4].draw(position + Point<int16_t>(10, 133));
-				party_mine_name.draw(position + Point<int16_t>(27, 130));
+				Point<int16_t> frame_offset = position + Point<int16_t>(10, 133);
+				Point<int16_t> entry_offset = position + Point<int16_t>(31, 130);
+				if (party)
+				{
+					for (int i = 0; i < party_member_info.size(); i++)
+					{
+						if (party_member_info.size() - i == 1)
+							party_mine_grid[2].draw(frame_offset);
+						else
+							party_mine_grid[1].draw(frame_offset);
+						party_member_info[i][0].draw(entry_offset);
+						entry_offset.shift_x(100);
+						party_member_info[i][1].draw(entry_offset);
+						entry_offset.shift_x(110);
+						party_member_info[i][2].draw(entry_offset);
+						entry_offset += Point<int16_t>(-210, 20);
+						frame_offset.shift_y(20);
+					}
+				}
+				else
+				{
+					party_mine_grid[2].draw(frame_offset);
+					party_mine_name.draw(entry_offset);
+				}
 			}
 			else if (party_tab == Buttons::BT_TAB_PARTY_SEARCH)
 			{
@@ -290,6 +335,15 @@ namespace ms
 			case Buttons::BT_TAB_PARTY_SEARCH:
 				change_party_tab(buttonid);
 				return Button::State::PRESSED;
+			case Buttons::BT_PARTY_CREATE:
+				create_party();
+				break;
+			case Buttons::BT_PARTY_LEAVE:
+				leave_party();
+				break;
+			case Buttons::BT_PARTY_INVITE:
+				invite_party();
+				break;
 			case Buttons::BT_TAB_FRIEND_ALL:
 			case Buttons::BT_TAB_FRIEND_ONLINE:
 				change_friend_tab(buttonid);
@@ -299,7 +353,7 @@ namespace ms
 				change_blacklist_tab(buttonid);
 				return Button::State::PRESSED;
 			default:
-				return Button::State::NORMAL;
+				break;
 		}
 
 		return Button::State::NORMAL;
@@ -409,6 +463,40 @@ namespace ms
 		return tab;
 	}
 
+	void UIUserList::update_party(Optional<Party> updated_party)
+	{
+		party = updated_party;
+
+		if (!updated_party)
+		{
+			buttons[Buttons::BT_PARTY_CREATE]->set_active(true);
+			buttons[Buttons::BT_PARTY_LEAVE]->set_active(false);
+			// party_member_info.clear();
+		}
+		else 
+		{
+			buttons[Buttons::BT_PARTY_CREATE]->set_active(false);
+			buttons[Buttons::BT_PARTY_LEAVE]->set_active(true);
+			// TODO update member info (can be round 2)
+			PartyMember* members = updated_party->get_party_members();
+			party_member_info.clear();
+			for (int i = 0; i < Party::MAX_PARTY_SIZE; i++)
+			{
+				auto pm = members[i];
+				if (pm.cid > 0)
+				{
+					std::vector<Text> mem_info = std::vector<Text>();
+					mem_info.emplace_back(Text::Font::A12M, Text::Alignment::LEFT, Color::Name::BLACK, pm.name);
+					mem_info.emplace_back(Text::Font::A12M, Text::Alignment::LEFT, Color::Name::BLACK, Job::get_name(pm.job));
+					char level_buf[4];
+					snprintf(level_buf, 3, "%d", members[i].level);
+					mem_info.emplace_back(Text::Font::A12M, Text::Alignment::RIGHT, Color::Name::BLACK, level_buf, 24);
+					party_member_info.emplace_back(mem_info);
+				}
+			}
+		}
+	}
+
 	void UIUserList::change_party_tab(uint8_t tabid)
 	{
 		uint8_t oldtab = party_tab;
@@ -451,4 +539,36 @@ namespace ms
 	{
 		return "Henesys Market";
 	}
+
+	void UIUserList::create_party()
+	{
+		PartyCreatePacket().dispatch();
+		return;
+	}
+
+	void UIUserList::leave_party()
+	{
+		PartyLeavePacket().dispatch();
+		return;
+	}
+
+	void UIUserList::invite_party()
+	{
+		// TODO pop window out
+		// Actual functions will be done once input has been received
+		std::cout << "Invite party button pressed" << std::endl;
+#ifdef USE_NOTICE_INVITE
+		auto handle_name = [&](std::string name)
+		{
+			std::cout << "Inviting " << name << " to party" << std::endl;
+			PartyInvitePacket(name).dispatch();
+		};
+
+		UI::get().emplace<UIEnterString>("Enter the name of the character you wish to invite.", handle_name, 12);
+#else		
+
+		UI::get().emplace<UIPartyInvite>();
+#endif
+	}
+
 }

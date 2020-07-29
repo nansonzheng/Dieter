@@ -25,6 +25,7 @@
 #include "Handlers/MapObjectHandlers.h"
 #include "Handlers/MessagingHandlers.h"
 #include "Handlers/NpcInteractionHandlers.h"
+#include "Handlers/PartyHandlers.h"
 #include "Handlers/PlayerHandlers.h"
 #include "Handlers/PlayerInteractionHandlers.h"
 #include "Handlers/SetFieldHandlers.h"
@@ -71,6 +72,7 @@ namespace ms
 		SORT_RESULT = 53,
 
 		/// Player 3
+		PARTY_OP = 62,
 
 		/// Messaging 2
 		SERVER_MESSAGE = 68,
@@ -99,6 +101,9 @@ namespace ms
 
 		UPDATE_CHARLOOK = 197,
 		SHOW_FOREIGN_EFFECT = 198,
+
+		UPDATE_PARTYMEMBER_HP = 201,
+
 		SHOW_ITEM_GAIN_INCHAT = 206, // TODO: Rename this (Terribly named)
 
 		/// Player
@@ -208,6 +213,10 @@ namespace ms
 
 		// Cash Shop
 		emplace<SET_CASH_SHOP, SetCashShopHandler>();
+
+		// Party Handlers
+		emplace<PARTY_OP, PartyOperationHandler>();
+		emplace<UPDATE_PARTYMEMBER_HP, PartyMemberHPHandler>();
 
 		// TODO: New handlers, they need coded and moved to a proper file.
 		emplace<CHECK_SPW_RESULT, CheckSpwResultHandler>();

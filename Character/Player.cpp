@@ -21,8 +21,9 @@
 
 #include "../Data/WeaponData.h"
 #include "../IO/UI.h"
-
 #include "../IO/UITypes/UIStatsInfo.h"
+#include "../IO/UITypes/UIUserList.h"
+
 #include "../Net/Packets/GameplayPackets.h"
 #include "../Net/Packets/InventoryPackets.h"
 
@@ -62,8 +63,9 @@ namespace ms
 		}
 	}
 
-	Player::Player(const CharEntry& entry) : Char(entry.id, entry.look, entry.stats.name), stats(entry.stats)
+	Player::Player(const CharEntry& entry) : Char(entry.id, entry.look, entry.stats.name), stats(entry.stats), party_id(0)
 	{
+		
 		attacking = false;
 		underwater = false;
 
@@ -462,6 +464,11 @@ namespace ms
 		return !climb_cooldown;
 	}
 
+	void Player::set_party_id(int32_t pid)
+	{
+		party_id = pid;
+	}
+
 	float Player::get_walkforce() const
 	{
 		return 0.05f + 0.11f * static_cast<float>(stats.get_total(EquipStat::Id::SPEED)) / 100;
@@ -535,5 +542,10 @@ namespace ms
 	Optional<const Ladder> Player::get_ladder() const
 	{
 		return ladder;
+	}
+
+	const int32_t Player::get_party_id() const
+	{
+		return party_id;
 	}
 }

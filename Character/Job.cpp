@@ -102,7 +102,7 @@ namespace ms
 		return level;
 	}
 
-	std::string Job::get_name(uint16_t jid) const
+	std::string Job::get_name(uint16_t jid)
 	{
 		switch (jid)
 		{
@@ -228,7 +228,7 @@ namespace ms
 			case 910:
 				return "SuperGM";
 			default:
-				return "";
+				return "???";
 		}
 	}
 

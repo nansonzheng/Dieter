@@ -579,7 +579,8 @@ namespace ms
 		MapObjects* chars = Stage::get().get_chars().get_chars();
 		marker_sprite = Animation(marker["another"]);
 		sprite_offset = marker_sprite.get_dimensions() / Point<int16_t>(2, 0);
-
+		// Character markers have pre-defined x-offset (but party members don't?)
+		sprite_offset.set_x(0);
 		for (auto chr = chars->begin(); chr != chars->end(); ++chr)
 		{
 			Point<int16_t> chr_pos = chr->second.get()->get_position();
@@ -588,7 +589,8 @@ namespace ms
 
 		/// Player
 		Point<int16_t> player_pos = Stage::get().get_player().get_position();
-		sprite_offset = player_marker.get_dimensions() / Point<int16_t>(2, 0);
+		sprite_offset = player_marker.get_dimensions() / Point<int16_t>(0, 2); 
+		sprite_offset.set_x(0);
 		player_marker.draw((player_pos + center_offset) / scale - sprite_offset + Point<int16_t>(map_draw_origin_x, map_draw_origin_y) + init_pos, alpha);
 	}
 

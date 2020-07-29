@@ -78,6 +78,8 @@ namespace ms
 		Combat& get_combat();
 		// Returns the current map ID
 		int32_t get_mapid();
+		// Returns reference to map of active parties on the current map
+		std::map<int32_t, Party>& get_parties();
 
 		// Return a pointer to a character, possibly the player.
 		Optional<Char> get_character(int32_t cid);
@@ -113,6 +115,8 @@ namespace ms
 		Camera camera;
 		Physics physics;
 		Player player;
+
+		std::map<int32_t, Party> parties;
 
 		Optional<Playable> playable;
 		State state;

@@ -22,6 +22,8 @@
 #include "../Components/Slider.h"
 #include "../Components/Textfield.h"
 
+#include "../../Gameplay/Party/Party.h"
+
 namespace ms
 {
 	class UIUserList : public UIDragElement<PosUSERLIST>
@@ -55,6 +57,8 @@ namespace ms
 		void change_tab(uint8_t tabid);
 		uint16_t get_tab();
 
+		void update_party(Optional<Party> party);
+
 	protected:
 		Button::State button_pressed(uint16_t buttonid) override;
 
@@ -63,6 +67,10 @@ namespace ms
 		void change_friend_tab(uint8_t tabid);
 		void change_blacklist_tab(uint8_t tabid);
 		std::string get_cur_location();
+
+		void create_party();
+		void leave_party();
+		void invite_party();
 
 		enum Buttons
 		{
@@ -112,6 +120,9 @@ namespace ms
 		Texture party_search_grid[3];
 		Text party_mine_name;
 		Slider party_slider;
+		Optional<Party> party;
+		std::vector<std::vector<Text>> party_member_info;
+		const Text none_text = Text(Text::Font::A11M, Text::Alignment::LEFT, Color::Name::BLACK, "none");
 
 		// Buddy tab
 		uint16_t friend_tab;

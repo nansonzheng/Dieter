@@ -46,7 +46,7 @@ namespace ms
 			position.shift_y(-8);
 			question = Text(Text::Font::A11M, alignment, Color::Name::WHITE, message, 200);
 		}
-		else if (type == NoticeType::ENTERNUMBER)
+		else if (type == NoticeType::ENTERNUMBER || type == NoticeType::ENTERSTRING)
 		{
 			position.shift_y(-16);
 			question = Text(Text::Font::A12M, Text::Alignment::LEFT, Color::Name::WHITE, message, 200);
@@ -64,7 +64,7 @@ namespace ms
 		position = Point<int16_t>(position.x() - dimension.x() / 2, position.y() - dimension.y() / 2);
 		dragarea = Point<int16_t>(dimension.x(), 20);
 
-		if (type != NoticeType::ENTERNUMBER)
+		if (type != NoticeType::ENTERNUMBER || type != NoticeType::ENTERSTRING)
 			Sound(Sound::Name::DLGNOTICE).play();
 	}
 
@@ -313,6 +313,117 @@ namespace ms
 		}
 
 		buttons[Buttons::OK]->set_state(Button::State::NORMAL);
+	}
+
+	UIEnterString::UIEnterString(std::string message, std::function<void(std::string)> h, int32_t m) : UINotice(message, NoticeType::ENTERSTRING)
+	{
+		handler = h;
+		max = m;
+
+		int16_t belowtext = box2offset(true) - 37;
+		int16_t pos_y = belowtext + 25;
+
+		nl::node src = nl::nx::ui["Basic.img"];
+
+		buttons[Buttons::OK] = std::make_unique<MapleButton>(src["BtOK4"], 156, pos_y);
+		buttons[Buttons::CANCEL] = std::make_unique<MapleButton>(src["BtCancel4"], 198, pos_y);
+
+		textfield = Textfield(Text::Font::A11M, Text::Alignment::LEFT, Color::Name::LIGHTGREY, Rectangle<int16_t>(24, 232, belowtext, belowtext + 20), 12);
+
+		textfield.set_enter_callback(
+			[&](std::string str)
+		{
+			handlestring(str);
+		}
+		);
+
+		textfield.set_key_callback(
+			KeyAction::Id::ESCAPE,
+			[&]()
+		{
+			deactivate();
+		}
+		);
+
+		textfield.set_state(Textfield::State::FOCUSED);
+	}
+
+	void UIEnterString::draw(float alpha) const
+	{
+		UINotice::draw(true);
+		UIElement::draw(alpha);
+
+		textfield.draw(position);
+	}
+
+	void UIEnterString::update()
+	{
+		UIElement::update();
+
+		textfield.update(position);
+	}
+
+	Cursor::State UIEnterString::send_cursor(bool clicked, Point<int16_t> cursorpos)
+	{
+		if (textfield.get_state() == Textfield::State::NORMAL)
+		{
+			Cursor::State nstate = textfield.send_cursor(cursorpos, clicked);
+
+			if (nstate != Cursor::State::IDLE)
+				return nstate;
+		}
+
+		return UIElement::send_cursor(clicked, cursorpos);
+	}
+
+	void UIEnterString::send_key(int32_t keycode, bool pressed, bool escape)
+	{
+		if (keycode == KeyAction::Id::RETURN)
+		{
+			handlestring(textfield.get_text());
+			deactivate();
+		}
+		else if (escape)
+		{
+			deactivate();
+		}
+	}
+
+	UIElement::Type UIEnterString::get_type() const
+	{
+		return TYPE;
+	}
+
+	Button::State UIEnterString::button_pressed(uint16_t buttonid)
+	{
+		switch (buttonid)
+		{
+		case Buttons::OK:
+			handlestring(textfield.get_text());
+			break;
+		case Buttons::CANCEL:
+			deactivate();
+			break;
+		}
+
+		return Button::State::NORMAL;
+	}
+
+	void UIEnterString::handlestring(std::string str)
+	{
+		auto okhandler = [&](bool)
+		{
+			textfield.set_state(Textfield::State::FOCUSED);
+			buttons[Buttons::OK]->set_state(Button::State::NORMAL);
+		};
+
+		if (str.length() > max)
+		{
+			UI::get().emplace<UIOk>("You may only enter up to " + std::to_string(max) + " characters.", okhandler);
+		}
+
+		handler(str);
+		deactivate();
 	}
 
 	UIOk::UIOk(std::string message, std::function<void(bool ok)> oh) : UINotice(message, NoticeType::OK)

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////
 //	This file is part of the continued Journey MMORPG client					//
-//	Copyright (C) 2015-2019  Daniel Allendorf, Ryan Payton						//
+//	Copyright (C) 2015-2019  Daniel Allendorf, Ryan Payton, Nanson Zheng		//
 //																				//
 //	This program is free software: you can redistribute it and/or modify		//
 //	it under the terms of the GNU Affero General Public License as published by	//
@@ -15,61 +15,33 @@
 //	You should have received a copy of the GNU Affero General Public License	//
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.		//
 //////////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
-#include "EquipStat.h"
+#include "../PacketHandler.h"
 
-#include "Inventory/Weapon.h"
+#include "../../Gameplay/Party/Party.h"
+
+#include "../../Template/Optional.h"
 
 namespace ms
 {
-	class Job
+	class PartyOperationHandler : public PacketHandler
 	{
 	public:
-		enum Level : uint16_t
-		{
-			BEGINNER,
-			FIRST,
-			SECOND,
-			THIRD,
-			FOURTH
-		};
-
-		static Level get_next_level(Level level)
-		{
-			switch (level)
-			{
-				case BEGINNER:
-					return FIRST;
-				case FIRST:
-					return SECOND;
-				case SECOND:
-					return THIRD;
-				default:
-					return FOURTH;
-			}
-		}
-
-
-		static std::string get_name(uint16_t id);
-
-		Job(uint16_t id);
-		Job();
-
-		void change_job(uint16_t id);
-		bool is_sub_job(uint16_t subid) const;
-		bool can_use(int32_t skill_id) const;
-		uint16_t get_id() const;
-		uint16_t get_subjob(Level level) const;
-		Level get_level() const;
-		const std::string& get_name() const;
-		EquipStat::Id get_primary(Weapon::Type weapontype) const;
-		EquipStat::Id get_secondary(Weapon::Type weapontype) const;
+		void handle(InPacket& recv) const override;
 
 	private:
+		void create_party(InPacket& recv) const;
+		void update_party(InPacket& recv) const;
+		void leave_party(InPacket& recv) const;
+		void join_party(InPacket& recv) const;
+		void edit_party(Party& party, InPacket& recv) const;
+		void update_ui(Optional<Party> party) const;
+	};
 
-		std::string name;
-		uint16_t id;
-		Level level;
+	class PartyMemberHPHandler : public PacketHandler
+	{
+		void handle(InPacket& recv) const override;
 	};
 }
