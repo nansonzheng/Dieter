@@ -71,6 +71,7 @@ namespace ms
 			QUIT,
 			CHARINFO,
 			CASHSHOP,
+            FADEYESNO,
 			NUM_TYPES
 		};
 

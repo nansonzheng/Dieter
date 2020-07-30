@@ -360,76 +360,6 @@ namespace ms
 							}
 						}
 					}
-<<<<<<< HEAD
-				}
-				break;
-				case KeyAction::Id::WORLDMAP:
-					emplace<UIWorldMap>();
-					break;
-				case KeyAction::Id::MAPLECHAT:
-				{
-					auto chat = UI::get().get_element<UIChat>();
-
-					if (!chat)
-						emplace<UIChat>();
-					else if (chat && !chat->is_active())
-						chat->makeactive();
-				}
-				break;
-				case KeyAction::Id::MINIMAP:
-					if (auto minimap = UI::get().get_element<UIMiniMap>())
-						minimap->send_key(action, pressed, escape);
-
-					break;
-				case KeyAction::Id::QUESTLOG:
-					emplace<UIQuestLog>(
-						Stage::get().get_player().get_quests()
-						);
-					break;
-				
-				case KeyAction::Id::KEYBINDINGS:
-				{
-					auto keyconfig = UI::get().get_element<UIKeyConfig>();
-
-					if (!keyconfig || !keyconfig->is_active())
-						emplace<UIKeyConfig>();
-					else if (keyconfig && keyconfig->is_active())
-						keyconfig->close();
-
-					break;
-				}
-				case KeyAction::Id::TOGGLECHAT:
-					if (auto chatbar = UI::get().get_element<UIChatbar>())
-						chatbar->toggle_chat();
-
-					break;
-				case KeyAction::Id::MENU:
-					if (auto statusbar = UI::get().get_element<UIStatusbar>())
-						statusbar->toggle_menu();
-
-					break;
-				case KeyAction::Id::QUICKSLOTS:
-					if (auto statusbar = UI::get().get_element<UIStatusbar>())
-						statusbar->toggle_qs();
-
-					break;
-				case KeyAction::Id::EVENT:
-					emplace<UIEvent>();
-					break;
-				case KeyAction::Id::CHANGECHANNEL:
-					emplace<UIChannel>();
-					break;
-				case KeyAction::Id::CHARINFO:
-
-				case KeyAction::Id::MAINMENU:
-					if (auto statusbar = UI::get().get_element<UIStatusbar>())
-						statusbar->send_key(action, pressed, escape);
-
-					break;
-				default:
-					std::cout << "Action (" << action << ") not handled!" << std::endl;
-=======
-
 					break;
 				}
 				case KeyType::Id::ACTION:
@@ -438,7 +368,6 @@ namespace ms
 				case KeyType::Id::SKILL:
 				{
 					Stage::get().send_key(type, action, pressed);
->>>>>>> 67a168be05d975ff003bdda02c6f609b17a6aa5d
 					break;
 				}
 			}
